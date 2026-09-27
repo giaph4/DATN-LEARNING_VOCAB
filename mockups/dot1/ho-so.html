@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hồ sơ — VocabLearning</title>
+  <link rel="icon" href="../shared/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    body[data-state="live"] [data-show-when~="live"] { display: block; }
+    .sec { max-width: 760px; }
+    .sec + .sec { margin-top: var(--sp-6); }
+    .sec h2 { font-size: 18px; margin-bottom: var(--sp-3); }
+    .profile-form > * + * { margin-top: var(--sp-5); }
+    .photo { display: flex; align-items: center; gap: var(--sp-5); flex-wrap: wrap; }
+    .photo-img { width: 96px; height: 96px; flex: none; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
+      background: var(--selected-bg); color: var(--primary); font-size: 36px; font-weight: 600; }
+    .photo-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photo-body { flex: 1; min-width: 200px; }
+    .photo-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+    .count { font-size: var(--fs-caption); color: var(--text-muted); align-self: flex-end; }
+    .readonly { color: var(--text-muted); overflow-wrap: anywhere; }
+    .form-actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+    .links { padding: 0; }
+    .links a { display: flex; align-items: center; gap: var(--sp-3); min-height: 64px; padding: var(--sp-3) var(--sp-5); color: var(--text); text-decoration: none; }
+    .links a + a { border-top: 1px solid var(--divider); }
+    .links a:hover { background: var(--bg); }
+    .links a > span { flex: 1; font-weight: 500; }
+    .links small { display: block; font-weight: 400; color: var(--text-muted); font-size: var(--fs-caption); }
+    .links .icon:first-child { color: var(--primary); }
+    .act { display: flex; flex-wrap: wrap; gap: var(--sp-5); align-items: center; }
+    .act b { font-size: 22px; }
+    .dots { display: flex; gap: 6px; }
+    .dots span { width: 28px; height: 28px; border-radius: 6px; background: var(--divider); display: grid; place-items: center; font-size: 11px; color: var(--text-muted); }
+    .dots span[data-on="true"] { background: var(--secondary-bg); color: var(--secondary); font-weight: 600; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    @media (max-width: 1023.98px) {
+      .form-actions .btn { width: 100%; }
+    }
+  </style>
+</head>
+<!--
+  Hồ sơ — route /ho-so — FE F1.5 (UI05) — BE B1.6 (TK-06)
+  API: GET /api/v1/users/me → {id, email, status, roles, emailVerified, displayName, bio?, level, learningGoal?, avatar?:{mediaId,url,expiresAt}}
+       PATCH /api/v1/users/me/profile {displayName?, bio?, avatarMediaId?, removeAvatar?} → như GET (400 fieldErrors displayName|bio)
+       POST /api/v1/media/upload-intents {purpose:"AVATAR", contentType, sizeBytes} → 201 {mediaId, uploadUrl, method:"PUT", headers, expiresAt}
+         → PUT uploadUrl (không gửi cookie) → POST /api/v1/media/{id}/complete → {status:"READY"} | 415 tệp giả ảnh | 422 chưa tải/quá 5 MB
+       POST /api/v1/auth/logout → 204
+  Trường null không có trong JSON. Chuỗi ngày/hoạt động (TK-10) chưa có API: hiển thị "Chưa có dữ liệu".
+  "API thật": đăng nhập trước ở dot1/dang-nhap (cùng trình duyệt).
+-->
+<body data-states="loading error success live" data-state="success" data-nav="ho-so" data-auth="required">
+<a class="skip-link" href="#main">Bỏ qua điều hướng</a>
+<div class="app">
+  <header class="app-header"></header>
+
+  <nav class="sidebar" aria-label="Điều hướng chính"></nav>
+
+  <main class="main" id="main">
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <h1>Hồ sơ</h1>
+          <p class="muted">Tên và ảnh hiển thị trên các bộ thẻ bạn chia sẻ.</p>
+        </div>
+      </div>
+
+      <div class="alert alert-danger sec" id="page-alert" role="alert" hidden style="margin-bottom:var(--sp-5)">
+        <i data-icon="circle-alert"></i>
+        <div><p id="page-alert-text"></p><p class="trace" id="page-alert-trace" hidden>Mã lỗi: <code></code></p></div>
+      </div>
+
+      <div data-show-when="loading" aria-busy="true" aria-label="Đang tải">
+        <div class="skeleton" style="height:420px;border-radius:var(--r-panel);max-width:760px"></div>
+      </div>
+
+      <div data-show-when="error">
+        <div class="state">
+          <h3>Bạn cần đăng nhập để xem hồ sơ</h3>
+          <p class="muted">Phiên đăng nhập đã hết hạn hoặc đã bị đăng xuất từ thiết bị khác.</p>
+          <a class="btn btn-primary" href="dang-nhap"><i data-icon="log-in"></i>Đăng nhập</a>
+        </div>
+      </div>
+
+      <div data-show-when="success live">
+        <section class="sec" aria-labelledby="info-title">
+          <h2 id="info-title">Thông tin cá nhân</h2>
+          <form class="panel profile-form" id="profile-form" novalidate>
+            <div class="photo">
+              <div class="photo-img" id="photo" aria-hidden="true"></div>
+              <div class="photo-body">
+                <p class="label" style="font-weight:500">Ảnh đại diện</p>
+                <p class="caption" id="photo-hint">JPEG, PNG hoặc WebP, tối đa 5 MB. Thông tin vị trí trong ảnh được xóa khi tải lên.</p>
+                <div class="photo-actions">
+                  <label class="btn btn-secondary" for="photo-file"><i data-icon="camera"></i><span id="photo-pick-text">Chọn ảnh</span></label>
+                  <input class="visually-hidden" type="file" id="photo-file" accept="image/jpeg,image/png,image/webp" aria-describedby="photo-hint photo-error">
+                  <button class="btn btn-ghost" type="button" id="photo-remove"><i data-icon="trash"></i>Gỡ ảnh</button>
+                </div>
+                <span class="field-error" id="photo-error" hidden role="alert"><i data-icon="circle-alert"></i><span></span></span>
+                <p class="caption" id="photo-status" aria-live="polite"></p>
+              </div>
+            </div>
+
+            <div class="field" data-field="displayName">
+              <label for="displayName">Tên hiển thị</label>
+              <input class="input" id="displayName" name="displayName" maxlength="100" autocomplete="nickname" aria-describedby="displayName-error displayName-count">
+              <span class="count" id="displayName-count"></span>
+              <span class="field-error" id="displayName-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+            </div>
+
+            <div class="field" data-field="bio">
+              <label for="bio">Giới thiệu <span class="optional">(không bắt buộc)</span></label>
+              <textarea class="textarea" id="bio" name="bio" maxlength="500" aria-describedby="bio-error bio-count" placeholder="Ví dụ: Ôn IELTS 6.5, mỗi ngày 20 phút sau giờ làm."></textarea>
+              <span class="count" id="bio-count"></span>
+              <span class="field-error" id="bio-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+            </div>
+
+            <div class="field">
+              <span class="label">Email đăng nhập</span>
+              <p class="readonly" id="email"></p>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit" id="save">Lưu hồ sơ</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="sec" aria-labelledby="streak-title">
+          <h2 id="streak-title">Chuỗi ngày và hoạt động</h2>
+          <div class="panel" id="activity"><p class="muted">Chưa có dữ liệu. Học xong bài đầu tiên để bắt đầu chuỗi ngày.</p></div>
+        </section>
+
+        <section class="sec" aria-labelledby="account-title">
+          <h2 id="account-title">Tài khoản</h2>
+          <div class="panel links">
+            <a href="cai-dat"><i data-icon="settings"></i><span>Cài đặt học<small>Trình độ, mục tiêu, chủ đề quan tâm</small></span><i data-icon="chevron-right"></i></a>
+            <a href="bao-mat"><i data-icon="log-in"></i><span>Bảo mật<small>Phương thức đăng nhập, thiết bị đang đăng nhập</small></span><i data-icon="chevron-right"></i></a>
+            <a href="../dot2/thong-ke"><i data-icon="chart-line"></i><span>Thống kê học tập<small>Lượt ôn, tỉ lệ nhớ, từ hay quên</small></span><i data-icon="chevron-right"></i></a>
+          </div>
+          <button class="btn btn-secondary" type="button" id="logout" style="margin-top:var(--sp-4)"><i data-icon="log-out"></i>Đăng xuất</button>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Điều hướng chính"></nav>
+</div>
+
+<script src="../shared/demo.js"></script>
+<script src="../shared/app.js"></script>
+<script>
+(() => {
+  const MAX = 5 * 1024 * 1024;
+  const TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const SAMPLE = {
+    id: '42', email: 'nguyen.thi.thanh.huong.hoc.tieng.anh.moi.ngay@example.test', status: 'ACTIVE', roles: ['LEARNER'],
+    emailVerified: true, displayName: 'Nguyễn Thị Thanh Hương', level: 'B1',
+    bio: 'Đang ôn IELTS 6.5. Mỗi tối học 20 phút từ vựng chủ đề môi trường và công việc.',
+  };
+  let me = structuredClone(SAMPLE);
+  let avatarChange = null; // { mediaId, preview } | { remove: true }
+  const live = () => document.body.dataset.state === 'live';
+  const $ = (id) => document.getElementById(id);
+
+  const initial = (name) => (name || '?').trim().split(/\s+/).pop().charAt(0).toUpperCase();
+  const renderPhoto = () => {
+    const src = avatarChange?.remove ? null : avatarChange?.preview || me.avatar?.url;
+    $('photo').innerHTML = src ? `<img src="${src}" alt="">` : initial(me.displayName);
+    $('header-avatar').textContent = initial(me.displayName);
+    $('photo-remove').hidden = !src;
+    $('photo-pick-text').textContent = src ? 'Đổi ảnh' : 'Chọn ảnh';
+  };
+  const counter = (id, max) => { $(`${id}-count`).textContent = `${$(id).value.length}/${max}`; };
+  const render = () => {
+    $('displayName').value = me.displayName || '';
+    $('bio').value = me.bio || '';
+    $('email').textContent = me.email;
+    counter('displayName', 100); counter('bio', 500);
+    avatarChange = null; renderPhoto();
+  };
+
+  const setFieldError = (field, msg) => {
+    const f = document.querySelector(`[data-field="${field}"]`);
+    if (msg) f.setAttribute('data-invalid', 'true'); else f.removeAttribute('data-invalid');
+    $(field).setAttribute('aria-invalid', msg ? 'true' : 'false');
+    const err = $(`${field}-error`); err.hidden = !msg; err.querySelector('span').textContent = msg || '';
+  };
+  const setPhotoError = (msg) => { const e = $('photo-error'); e.hidden = !msg; e.querySelector('span').textContent = msg || ''; };
+  const showAlert = (text, traceId) => {
+    $('page-alert').hidden = !text; $('page-alert-text').textContent = text || '';
+    const t = $('page-alert-trace'); t.hidden = !traceId; t.querySelector('code').textContent = traceId || '';
+  };
+
+  const load = async () => {
+    if (!live()) { me = structuredClone(SAMPLE); render(); return; }
+    try { me = await VL.api('/users/me'); render(); }
+    catch (e) {
+      if (e.status === 401) document.body.dataset.state = 'error';
+      else showAlert('Chưa tải được hồ sơ. Thử lại sau ít phút.', e.traceId);
+    }
+  };
+
+  // Ảnh: kiểm sơ bộ ở trình duyệt, máy chủ vẫn kiểm lại nội dung thật khi complete
+  const upload = async (file) => {
+    const intent = (await VL.send('POST', '/media/upload-intents', { purpose: 'AVATAR', contentType: file.type, sizeBytes: file.size })).body;
+    const put = await VL.put(intent, file);
+    if (!put.ok) throw { detail: 'Tải ảnh lên kho lưu trữ không thành công.' };
+    await VL.send('POST', `/media/${intent.mediaId}/complete`);
+    return intent.mediaId;
+  };
+
+  $('photo-file').addEventListener('change', async (ev) => {
+    const file = ev.target.files[0]; ev.target.value = '';
+    if (!file) return;
+    setPhotoError(null);
+    if (!TYPES.includes(file.type)) return setPhotoError('Chỉ nhận ảnh JPEG, PNG hoặc WebP.');
+    if (file.size > MAX) return setPhotoError(`Ảnh ${(file.size / 1048576).toFixed(1)} MB, vượt quá 5 MB. Hãy chọn ảnh nhỏ hơn.`);
+    const preview = URL.createObjectURL(file);
+    const save = $('save'); save.disabled = true; $('photo-status').textContent = 'Đang tải ảnh lên…';
+    try {
+      const mediaId = live() ? await upload(file) : 'mock-' + Date.now();
+      avatarChange = { mediaId, preview }; renderPhoto();
+      $('photo-status').textContent = 'Ảnh đã sẵn sàng. Bấm "Lưu hồ sơ" để dùng ảnh này.';
+    } catch (e) {
+      URL.revokeObjectURL(preview); $('photo-status').textContent = '';
+      const map = {
+        UNSUPPORTED_MEDIA_TYPE: 'Tệp này không phải ảnh hợp lệ. Hãy chọn ảnh JPEG, PNG hoặc WebP khác.',
+        BUSINESS_RULE_VIOLATED: e.detail, RATE_LIMITED: e.detail,
+      };
+      setPhotoError(map[e.code] || e.detail || 'Chưa tải được ảnh. Thử lại sau ít phút.');
+    } finally { save.disabled = false; }
+  });
+  $('photo-remove').addEventListener('click', () => {
+    avatarChange = { remove: true }; renderPhoto();
+    $('photo-status').textContent = 'Ảnh sẽ được gỡ khi bạn bấm "Lưu hồ sơ".';
+  });
+
+  ['displayName', 'bio'].forEach((id) => $(id).addEventListener('input', () => { counter(id, id === 'bio' ? 500 : 100); setFieldError(id, null); }));
+
+  $('profile-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const name = $('displayName').value.trim();
+    const bio = $('bio').value.trim();
+    setFieldError('displayName', null); setFieldError('bio', null); showAlert(null);
+    if (name.length < 2) return setFieldError('displayName', 'Tên hiển thị cần từ 2 đến 100 ký tự.'), $('displayName').focus();
+    const body = { displayName: name, bio };
+    if (avatarChange?.remove) body.removeAvatar = true;
+    else if (avatarChange?.mediaId) body.avatarMediaId = avatarChange.mediaId;
+    const btn = $('save'); btn.disabled = true;
+    try {
+      if (live()) me = (await VL.send('PATCH', '/users/me/profile', body)).body;
+      else {
+        me = { ...me, displayName: name, bio: bio || undefined };
+        if (avatarChange?.remove) delete me.avatar; else if (avatarChange) me.avatar = { mediaId: avatarChange.mediaId, url: avatarChange.preview };
+      }
+      render(); $('photo-status').textContent = ''; VL.toast('Đã lưu hồ sơ');
+    } catch (e) {
+      (e.fieldErrors || []).forEach((f) => setFieldError(f.field, f.message));
+      if (!e.fieldErrors?.length) {
+        const map = { NOT_FOUND: 'Ảnh đã chọn không còn. Hãy chọn lại ảnh.', BUSINESS_RULE_VIOLATED: e.detail, UNAUTHENTICATED: 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.' };
+        showAlert(map[e.code] || 'Chưa lưu được hồ sơ. Thử lại sau ít phút.', map[e.code] ? null : e.traceId);
+      }
+    } finally { btn.disabled = false; }
+  });
+
+  $('logout').addEventListener('click', async (ev) => {
+    ev.currentTarget.disabled = true;
+    try { if (live()) await VL.send('POST', '/auth/logout'); } catch { /* đã hết phiên cũng coi như đăng xuất */ }
+    location.href = 'dang-nhap';
+  });
+
+  document.addEventListener('mock:state', ({ detail: s }) => { showAlert(null); if (s === 'success' || s === 'live') load(); });
+  // Demo: chuỗi ngày và 7 ngày gần nhất từ lịch sử học
+  if (VL.demo?.account()) {
+    const D = VL.demo; const l = D.learning();
+    const week = Array.from({ length: 7 }, (_, i) => Date.now() - (6 - i) * 86400e3);
+    if (Object.keys(l.days).length) {
+      $('activity').innerHTML = `<div class="act"><div><b>${D.streak()} ngày</b><p class="caption">chuỗi học liên tiếp</p></div>
+        <div><p class="caption" style="margin-bottom:4px">7 ngày gần nhất</p><div class="dots">${week.map((ms) => {
+          const on = !!l.days[D.dayKey(ms)]; const d = new Date(ms);
+          return `<span data-on="${on}" title="${d.toLocaleDateString('vi-VN')}: ${on ? 'có học' : 'không học'}">${d.getDate()}</span>`;
+        }).join('')}</div></div>
+        <a class="btn btn-ghost" href="../dot2/thong-ke">Xem thống kê</a></div>`;
+    }
+  }
+  load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+# Local credentials (keep templates)
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Build output and dependencies
+target/
+build/
+node_modules/
+.next/
+out/
+coverage/
+*.log
+__pycache__/
+*.pyc
+
+# Editor and machine-specific settings
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+Thumbs.db
+.claude/settings.local.json
+
+# Generated knowledge graph
+graphify-out/

@@ -1,0 +1,13 @@
+# Local development: create the MinIO bucket automatically, verbose SQL off by default.
+spring:
+  config:
+    # Read backend/.env (same file as docker compose) whether the IDE runs from the repo root or from backend/.
+    import: "optional:file:.env[.properties],optional:file:backend/.env[.properties]"
+
+app:
+  storage:
+    create-bucket: true
+
+logging:
+  level:
+    com.team.vocab_learn: DEBUG

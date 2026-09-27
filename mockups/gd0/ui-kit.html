@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Bộ thành phần giao diện — VocabLearning</title>
+  <link rel="icon" href="../shared/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sp-3); }
+    .swatch { border: 1px solid var(--divider); border-radius: var(--r-control); overflow: hidden; background: var(--surface); }
+    .swatch i { display: block; height: 48px; }
+    .swatch div { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-caption); }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-5); }
+    .type-sample > * + * { margin-top: var(--sp-2); }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main">Bỏ qua điều hướng</a>
+<div class="app">
+  <header class="app-header">
+    <a class="brand" href="../index.html"><img class="brand-mark" src="../shared/assets/logo-mark.svg" alt="" width="28" height="28"><span>Vocab<span class="brand-accent">Learning</span></span></a>
+    <span class="header-spacer"></span>
+    <span class="badge badge-info">Trang /_ui — chỉ dùng khi phát triển</span>
+  </header>
+  <nav class="sidebar" aria-label="Mục lục bộ thành phần">
+    <ul class="nav">
+      <li><a href="#mau" aria-current="page"><i data-icon="settings"></i>Màu và chữ</a></li>
+      <li><a href="#nut"><i data-icon="check"></i>Nút</a></li>
+      <li><a href="#bieu-mau"><i data-icon="pencil-line"></i>Biểu mẫu</a></li>
+      <li><a href="#thong-bao"><i data-icon="info"></i>Nhãn và thông báo</a></li>
+      <li><a href="#bang"><i data-icon="library"></i>Bảng và phân trang</a></li>
+      <li><a href="#trang-thai"><i data-icon="rotate-ccw"></i>Tải, rỗng, lỗi</a></li>
+      <li><a href="#the-hoc"><i data-icon="book-open"></i>Thẻ học</a></li>
+    </ul>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <h1>Bộ thành phần giao diện</h1>
+          <p class="muted">F0.6 — mọi màn hình Đợt 1–3 ghép từ các thành phần này. Kích thước màn hình: thử 360, 390, 768, 1280 px.</p>
+        </div>
+      </div>
+
+      <!-- Màu và chữ -->
+      <section class="section" id="mau" aria-labelledby="h-mau">
+        <h2 id="h-mau">Màu và chữ</h2>
+        <div class="swatches">
+          <div class="swatch"><i style="background:var(--bg)"></i><div>Nền trang (60 %)<br><span class="muted">#F5F7FB</span></div></div>
+          <div class="swatch"><i style="background:var(--surface)"></i><div>Bề mặt<br><span class="muted">#FFFFFF</span></div></div>
+          <div class="swatch"><i style="background:var(--text)"></i><div>Chữ chính<br><span class="muted">#1B2536</span></div></div>
+          <div class="swatch"><i style="background:var(--text-muted)"></i><div>Chữ phụ<br><span class="muted">#536075</span></div></div>
+          <div class="swatch"><i style="background:var(--divider)"></i><div>Đường chia<br><span class="muted">#E2E7EF</span></div></div>
+          <div class="swatch"><i style="background:var(--control-border)"></i><div>Viền điều khiển<br><span class="muted">#8391A3</span></div></div>
+          <div class="swatch"><i style="background:var(--primary)"></i><div>Xanh dương — hành động chính (30 %)<br><span class="muted">#1D5FD1</span></div></div>
+          <div class="swatch"><i style="background:var(--selected-bg)"></i><div>Mục được chọn<br><span class="muted">#E9F0FD</span></div></div>
+          <div class="swatch"><i style="background:var(--secondary)"></i><div>Xanh lá — tiến độ, hoàn thành<br><span class="muted">#1E7F55</span></div></div>
+          <div class="swatch"><i style="background:var(--accent)"></i><div>Cam — lời kêu gọi học (10 %)<br><span class="muted">#F59E0B</span></div></div>
+          <div class="swatch"><i style="background:var(--accent-bg)"></i><div>Nền nhấn cam<br><span class="muted">#FFF4E0</span></div></div>
+          <div class="swatch"><i style="background:var(--primary-strong)"></i><div>Khối thương hiệu<br><span class="muted">#16489E</span></div></div>
+        </div>
+        <div class="grid-2" style="margin-top:var(--sp-5)">
+          <div class="panel type-sample">
+            <p class="caption">Tiêu đề trang 28 · nhóm 20 · nội dung 16 · chú thích 14</p>
+            <h1>Thư viện của bạn</h1>
+            <h2>Bộ thẻ đang học</h2>
+            <p>Nội dung 16 px, giãn dòng 1,6. Tiếng Việt đầy dấu: “Nghiêng, ngã, huyền, sắc, hỏi, nặng.”</p>
+            <p class="caption">Cập nhật lúc 20:15, 12/10/2026</p>
+          </div>
+          <div class="panel type-sample">
+            <p class="caption">Trong phiên học: từ 40 · nghĩa 22 · ví dụ 17</p>
+            <p class="word" style="margin-top:0">serendipity</p>
+            <p class="meaning">sự tình cờ may mắn</p>
+            <p class="example">Finding this café was pure serendipity.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Nút -->
+      <section class="section" id="nut" aria-labelledby="h-nut">
+        <h2 id="h-nut">Nút</h2>
+        <div class="panel stack">
+          <div class="row">
+            <button class="btn btn-accent">Bắt đầu học</button>
+            <button class="btn btn-primary">Lưu thẻ</button>
+            <button class="btn btn-secondary">Sao chép bộ</button>
+            <button class="btn btn-ghost">Xem chi tiết</button>
+            <button class="btn btn-danger">Xóa bộ thẻ</button>
+          </div>
+          <div class="row">
+            <button class="btn btn-primary btn-lg">Lưu thay đổi</button>
+            <button class="btn btn-primary" aria-busy="true">Đang lưu</button>
+            <button class="btn btn-secondary" disabled>Không khả dụng</button>
+            <button class="btn btn-secondary btn-icon" aria-label="Nghe phát âm"><i data-icon="volume-2"></i></button>
+          </div>
+          <p class="caption">Mỗi vùng thao tác chỉ một nút tô đậm. Nút đang gửi có trạng thái bận và không bấm lại được.</p>
+        </div>
+      </section>
+
+      <!-- Biểu mẫu -->
+      <section class="section" id="bieu-mau" aria-labelledby="h-form">
+        <h2 id="h-form">Biểu mẫu</h2>
+        <form class="panel grid-2" onsubmit="event.preventDefault(); VL.toast('Đã lưu thẻ')">
+          <div class="field">
+            <label for="f-word">Từ hoặc cụm từ</label>
+            <input class="input" id="f-word" value="take something for granted">
+            <span class="hint">Tối đa 255 ký tự.</span>
+          </div>
+          <div class="field" data-invalid="true">
+            <label for="f-meaning">Nghĩa</label>
+            <input class="input" id="f-meaning" aria-invalid="true" aria-describedby="e-meaning">
+            <span class="field-error" id="e-meaning"><i data-icon="circle-alert"></i>Vui lòng nhập nghĩa của từ.</span>
+          </div>
+          <div class="field">
+            <label for="f-level">Trình độ</label>
+            <select class="select" id="f-level"><option>A1</option><option>A2</option><option selected>B1</option><option>B2</option><option>C1</option><option>C2</option></select>
+          </div>
+          <div class="field">
+            <label for="f-note">Ghi chú <span class="optional">(không bắt buộc)</span></label>
+            <textarea class="textarea" id="f-note" placeholder="Mẹo nhớ, ngữ cảnh gặp từ…"></textarea>
+          </div>
+          <div class="stack" style="gap:0">
+            <label class="check"><input type="checkbox" checked> Nhận email nhắc học</label>
+            <label class="switch"><input type="checkbox" role="switch" checked> Thông báo trong ứng dụng</label>
+          </div>
+          <div class="row" style="align-self:end;justify-content:flex-end">
+            <button type="button" class="btn btn-secondary">Hủy</button>
+            <button class="btn btn-primary">Lưu thẻ</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Nhãn và thông báo -->
+      <section class="section" id="thong-bao" aria-labelledby="h-tb">
+        <h2 id="h-tb">Nhãn, thông báo và hộp thoại</h2>
+        <div class="panel stack">
+          <div class="row">
+            <span class="badge">Riêng tư</span>
+            <span class="badge badge-warning">Chờ duyệt</span>
+            <span class="badge badge-success">Đã duyệt</span>
+            <span class="badge badge-danger">Bị ẩn</span>
+            <span class="badge badge-info">Quản trị biên soạn</span>
+          </div>
+          <div class="alert alert-warning"><i data-icon="triangle-alert"></i><p>Thẻ “take off” với nghĩa này đã có trong bộ. <a href="#">Xem thẻ trùng</a></p></div>
+          <div class="alert alert-danger"><i data-icon="circle-alert"></i><p>Không lưu được thay đổi vì dữ liệu vừa được sửa ở nơi khác. <a href="#">Tải lại</a></p></div>
+          <div class="row">
+            <button class="btn btn-secondary" data-toast="Đã lưu thẻ">Hiện thông báo thành công</button>
+            <button class="btn btn-secondary" data-toast="Không kết nối được máy chủ. Thử lại sau." data-toast-type="error">Hiện thông báo lỗi</button>
+            <button class="btn btn-danger" data-dialog-open="dlg-delete">Mở hộp thoại xóa</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bảng -->
+      <section class="section" id="bang" aria-labelledby="h-bang">
+        <h2 id="h-bang">Bảng và phân trang</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Bộ thẻ</th><th>Trình độ</th><th class="num">Số thẻ</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+              <tr><td data-label="Bộ thẻ">Giao tiếp nơi công sở: họp nhóm, trao đổi với khách hàng, viết email phản hồi yêu cầu và đàm phán lịch làm việc</td><td data-label="Trình độ">B1</td><td class="num" data-label="Số thẻ">124</td><td data-label="Trạng thái"><span class="badge badge-success">Đã duyệt</span></td></tr>
+              <tr><td data-label="Bộ thẻ">Sân bay và hành lý</td><td data-label="Trình độ">A2</td><td class="num" data-label="Số thẻ">38</td><td data-label="Trạng thái"><span class="badge badge-warning">Chờ duyệt</span></td></tr>
+              <tr><td data-label="Bộ thẻ">TOEIC — Tuyển dụng</td><td data-label="Trình độ">B2</td><td class="num" data-label="Số thẻ">0</td><td data-label="Trạng thái"><span class="badge">Riêng tư</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <nav class="pagination" aria-label="Phân trang">
+          <span class="caption">Hiển thị 1–20 trong 57 bộ</span>
+          <div class="pages">
+            <button class="page-btn" aria-label="Trang trước" disabled><i data-icon="chevron-left" style="margin:auto"></i></button>
+            <button class="page-btn" aria-current="page">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn" aria-label="Trang sau"><i data-icon="chevron-right" style="margin:auto"></i></button>
+          </div>
+        </nav>
+      </section>
+
+      <!-- Trạng thái -->
+      <section class="section" id="trang-thai" aria-labelledby="h-tt">
+        <h2 id="h-tt">Tải, rỗng, lỗi</h2>
+        <div class="grid-2">
+          <div class="panel stack" aria-busy="true" aria-label="Đang tải">
+            <div class="skeleton" style="height:20px;width:60%"></div>
+            <div class="skeleton" style="height:14px;width:90%"></div>
+            <div class="skeleton" style="height:14px;width:75%"></div>
+          </div>
+          <div class="state">
+            <h3>Chưa có bộ thẻ nào</h3>
+            <p class="muted">Tạo bộ đầu tiên hoặc sao chép một bộ có sẵn trong danh mục.</p>
+            <div class="row"><button class="btn btn-primary">Tạo bộ thẻ</button><a class="btn btn-ghost" href="#">Xem danh mục</a></div>
+          </div>
+          <div class="state state-error" role="alert">
+            <h3>Không tải được danh sách</h3>
+            <p class="muted">Máy chủ tạm thời không phản hồi. Dữ liệu của bạn không bị ảnh hưởng.</p>
+            <button class="btn btn-secondary"><i data-icon="rotate-ccw"></i>Thử lại</button>
+            <p class="trace">Mã lỗi: <code>6e1314066b754840</code></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Thẻ học -->
+      <section class="section" id="the-hoc" aria-labelledby="h-the">
+        <h2 id="h-the">Thẻ học (dùng từ Đợt 2)</h2>
+        <p class="muted" style="margin-bottom:var(--sp-4)">Phím cách để lật, phím 1–4 để chọn mức nhớ. Bật “giảm chuyển động” của hệ điều hành để thấy thẻ đổi mặt không quay.</p>
+        <div class="study" data-study>
+          <div class="study-top">
+            <span>Thẻ 12 / 30</span>
+            <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="30" aria-valuenow="12" aria-label="Tiến độ phiên"><span style="--value:.4"></span></div>
+            <span>còn khoảng 6 phút</span>
+          </div>
+          <div class="card-stage">
+            <div class="card" data-flipped="false">
+              <article class="card-face card-front">
+                <p class="card-kind">Anh → Việt, danh từ</p>
+                <p class="word">serendipity</p>
+                <div class="ipa-row"><span>/ˌser.ənˈdɪp.ə.ti/</span><button class="btn btn-ghost btn-icon" aria-label="Nghe phát âm"><i data-icon="volume-2"></i></button></div>
+                <p class="card-foot">Nhớ lại nghĩa, rồi lật thẻ để kiểm tra.</p>
+              </article>
+              <article class="card-face card-back" aria-hidden="true">
+                <p class="card-kind">Anh → Việt, danh từ</p>
+                <p class="word" style="font-size:28px;margin-top:var(--sp-3)">serendipity</p>
+                <hr class="card-rule">
+                <figure class="img-slot" data-src="../shared/assets/images/card-serendipity.webp" data-alt="Hai người bạn tình cờ gặp nhau ở quán cà phê" style="aspect-ratio:16/9;max-height:180px;margin-bottom:var(--sp-3)">
+                  <i data-icon="image"></i>
+                  <figcaption><b>Ảnh minh họa của thẻ (tùy chọn)</b><span>card-serendipity.webp · 640×360</span><span>Thẻ thật lấy ảnh từ API (tep_cua_the). Ảnh mẫu: hai người bạn bất ngờ gặp nhau trong quán cà phê.</span></figcaption>
+                </figure>
+                <p class="meaning">sự tình cờ may mắn; khả năng tình cờ khám phá ra điều tốt đẹp</p>
+                <div class="example">
+                  <p>Finding this café was pure serendipity.</p>
+                  <p class="vi">Tìm thấy quán cà phê này hoàn toàn là tình cờ may mắn.</p>
+                </div>
+              </article>
+            </div>
+          </div>
+          <div class="study-actions">
+            <button class="btn btn-primary btn-lg" data-flip style="width:100%">Lật thẻ</button>
+            <div class="rating" hidden role="group" aria-label="Bạn nhớ từ này thế nào?">
+              <button class="rate rate-again" data-label="Quên">Quên <kbd>1</kbd></button>
+              <button class="rate rate-hard" data-label="Khó">Khó <kbd>2</kbd></button>
+              <button class="rate rate-good" data-label="Nhớ">Nhớ <kbd>3</kbd></button>
+              <button class="rate rate-easy" data-label="Dễ">Dễ <kbd>4</kbd></button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Điều hướng chính">
+    <a href="#"><i data-icon="book-open"></i>Học</a>
+    <a href="#"><i data-icon="library"></i>Thư viện</a>
+    <a href="#"><i data-icon="pencil-line"></i>Luyện tập</a>
+    <a href="#"><i data-icon="notebook"></i>Sổ tay</a>
+    <a href="#"><i data-icon="user"></i>Tôi</a>
+  </nav>
+</div>
+
+<div class="dialog-scrim" id="dlg-delete" data-open="false">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-delete-title">
+    <h2 id="dlg-delete-title">Xóa bộ “Sân bay và hành lý”?</h2>
+    <p class="muted">38 thẻ và tiến độ học của bộ này sẽ bị xóa. Không thể hoàn tác.</p>
+    <div class="dialog-actions">
+      <button class="btn btn-secondary" data-dialog-close>Giữ lại</button>
+      <button class="btn btn-danger" data-dialog-close data-toast="Đã xóa bộ thẻ">Xóa bộ thẻ</button>
+    </div>
+  </div>
+</div>
+
+<script src="../shared/app.js"></script>
+</body>
+</html>

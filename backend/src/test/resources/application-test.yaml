@@ -1,0 +1,14 @@
+# Integration tests: containers are wired in AbstractIntegrationTest; workers are started manually in tests.
+app:
+  google:
+    client-id: test-google-client
+    client-secret: test-google-secret
+  worker:
+    enabled: false
+  storage:
+    create-bucket: true
+
+logging:
+  level:
+    root: WARN
+    com.team.vocab_learn: INFO

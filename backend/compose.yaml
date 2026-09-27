@@ -1,0 +1,90 @@
+# VocabLearning — dev stack.
+#   BE dev (API chạy trong IDE):   docker compose up -d
+#   FE dev (API chạy trong Docker): docker compose --profile app up -d --build
+name: vocab-learning
+
+x-healthcheck: &hc
+  interval: 5s
+  timeout: 5s
+  retries: 30
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      # One app user with full rights on vocab_learning (used by Flyway and the API).
+      MYSQL_DATABASE: vocab_learning
+      MYSQL_USER: ${DB_USER:-vocab}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-vocab_dev_pw}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_dev_pw}
+      TZ: UTC
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci", "--default-time-zone=+00:00"]
+    ports: ["${MYSQL_PORT:-3307}:3306"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      <<: *hc
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["${REDIS_PORT:-6379}:6379"]
+    volumes: [redis-data:/data]
+    healthcheck:
+      <<: *hc
+      test: ["CMD", "redis-cli", "ping"]
+
+  minio:
+    image: minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-minioadmin}
+    ports: ["9000:9000", "9001:9001"]   # 9000 S3 API, 9001 web console
+    volumes: [minio-data:/data]
+    healthcheck:
+      <<: *hc
+      test: ["CMD", "mc", "ready", "local"]
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["1025:1025", "8025:8025"]   # 1025 SMTP, 8025 web inbox
+    healthcheck:
+      <<: *hc
+      test: ["CMD", "/mailpit", "readyz"]
+
+  api:
+    profiles: ["app"]
+    build: .
+    image: vocab-learning-api:dev
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,dev
+      DB_USER: ${DB_USER:-vocab}
+      DB_PASSWORD: ${DB_PASSWORD:-vocab_dev_pw}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-minioadmin}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-minioadmin}
+      STORAGE_PUBLIC_ENDPOINT: ${STORAGE_PUBLIC_ENDPOINT:-http://localhost:9000}
+      APP_PUBLIC_BASE_URL: ${APP_PUBLIC_BASE_URL:-http://localhost:3000}
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      LLM_PROVIDER_API_KEY: ${LLM_PROVIDER_API_KEY:-}
+      SPEECH_PROVIDER_KEY: ${SPEECH_PROVIDER_KEY:-}
+    ports: ["${API_PORT:-8080}:8080"]
+    depends_on:
+      mysql: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio: { condition: service_healthy }
+      mailpit: { condition: service_healthy }
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/actuator/health/readiness || exit 1"]
+
+volumes:
+  mysql-data:
+  redis-data:
+  minio-data:

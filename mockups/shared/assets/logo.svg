@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 208 40" width="208" height="40" role="img" aria-label="VocabLearning">
+  <g transform="translate(0 4)">
+    <rect width="32" height="32" rx="8" fill="#1D5FD1"/>
+    <rect x="8.5" y="7.5" width="15" height="18.5" rx="3" fill="#FFFFFF" fill-opacity="0.35" transform="rotate(-9 16 16.75)"/>
+    <rect x="9.5" y="8" width="15" height="18.5" rx="3" fill="#FFFFFF"/>
+    <path d="M13 12.8 17 21.2 21 12.8" fill="none" stroke="#1D5FD1" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="24.5" cy="8" r="3.4" fill="#F59E0B" stroke="#1D5FD1" stroke-width="1.6"/>
+  </g>
+  <text x="42" y="27" font-family="'Be Vietnam Pro','Segoe UI',system-ui,sans-serif" font-size="20" font-weight="600" fill="#1B2536">Vocab<tspan fill="#1D5FD1">Learning</tspan></text>
+</svg>

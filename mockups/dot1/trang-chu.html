@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>VocabLearning — Học từ vựng tiếng Anh mỗi ngày</title>
+  <link rel="icon" href="../shared/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    body { background: var(--surface); }
+    .top { display: flex; align-items: center; gap: var(--sp-3); max-width: 1120px; margin: 0 auto; padding: var(--sp-4) var(--sp-5); }
+    .top .spacer { flex: 1; }
+    .hero { max-width: 1120px; margin: 0 auto; padding: var(--sp-7) var(--sp-5); display: grid; grid-template-columns: 1.1fr 1fr; gap: var(--sp-7); align-items: center; }
+    .hero h1 { font-size: 44px; line-height: 1.15; letter-spacing: -0.01em; max-width: 16ch; }
+    .hero .lead { font-size: 18px; color: var(--text-muted); margin-top: var(--sp-4); max-width: 46ch; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-6); }
+    .preview { background: var(--bg); border-radius: var(--r-card); padding: var(--sp-6); }
+    .preview .card-face { position: static; transform: none; min-height: 0; }
+    .preview .rating { margin-top: var(--sp-4); pointer-events: none; }
+    .preview-cap { font-size: var(--fs-caption); color: var(--text-muted); margin-top: var(--sp-3); }
+    .band { background: var(--bg); border-top: 1px solid var(--divider); border-bottom: 1px solid var(--divider); }
+    .band-inner { max-width: 1120px; margin: 0 auto; padding: var(--sp-7) var(--sp-5); }
+    .points { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-6); }
+    .points li { display: flex; gap: var(--sp-3); align-items: flex-start; }
+    .points .icon { color: var(--primary); margin-top: 3px; }
+    .points b { display: block; margin-bottom: var(--sp-1); }
+    .points p { color: var(--text-muted); }
+    .featured { max-width: 1120px; margin: 0 auto; padding: var(--sp-7) var(--sp-5); }
+    .featured h2 { font-size: 22px; margin-bottom: var(--sp-2); }
+    .decks { list-style: none; margin: var(--sp-5) 0 0; padding: 0; border-top: 1px solid var(--divider); }
+    .decks li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); padding: var(--sp-4) 0; border-bottom: 1px solid var(--divider); }
+    .decks .d-body { flex: 1; min-width: 240px; }
+    .decks a.d-title { font-weight: 600; color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
+    .decks a.d-title:hover { color: var(--primary); text-decoration: underline; }
+    .decks .d-meta { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-1); }
+    .foot { max-width: 1120px; margin: 0 auto; padding: var(--sp-6) var(--sp-5) calc(var(--sp-7) + 56px); color: var(--text-muted); font-size: var(--fs-caption); }
+    @media (max-width: 1023.98px) {
+      .top { padding: var(--sp-3) var(--sp-4); }
+      .top .hide-sm { display: none; }
+      .hero { grid-template-columns: 1fr; padding: var(--sp-5) var(--sp-4) var(--sp-6); gap: var(--sp-6); }
+      .hero h1 { font-size: 32px; }
+      .hero-actions .btn { flex: 1; }
+      .preview { padding: var(--sp-4); }
+      .band-inner, .featured { padding: var(--sp-6) var(--sp-4); }
+      .points { grid-template-columns: 1fr; gap: var(--sp-5); }
+      .foot { padding-left: var(--sp-4); padding-right: var(--sp-4); }
+    }
+  </style>
+</head>
+<!-- Trang chủ — route / — FE F1.15. Demo tĩnh: bộ nổi bật lấy từ dữ liệu mẫu (bản thật: GET /catalog/decks). -->
+<body>
+<a class="skip-link" href="#main">Bỏ qua điều hướng</a>
+<header class="top">
+  <a class="brand" href="trang-chu"><img class="brand-mark" src="../shared/assets/logo-mark.svg" alt="" width="28" height="28"><span>Vocab<span class="brand-accent">Learning</span></span></a>
+  <span class="spacer"></span>
+  <span id="top-actions"></span>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div>
+      <h1 id="hero-title">Học từ vựng tiếng Anh mỗi ngày, nhớ lâu hơn</h1>
+      <p class="lead">Mỗi ngày chỉ cần 15 phút. Hệ thống nhắc bạn ôn đúng lúc sắp quên, theo bộ thẻ và chủ đề bạn chọn.</p>
+      <div class="hero-actions" id="hero-actions"></div>
+    </div>
+    <div class="preview" aria-label="Ví dụ một thẻ học">
+      <article class="card-face">
+        <p class="card-kind">Anh → Việt, danh từ</p>
+        <p class="word">layover</p>
+        <div class="ipa-row"><span>/ˈleɪˌəʊ.vər/</span></div>
+        <hr class="card-rule">
+        <p class="meaning">thời gian quá cảnh, dừng chờ nối chuyến</p>
+        <div class="example"><p>We had a three-hour layover in Singapore.</p><p class="vi">Chúng tôi quá cảnh ba tiếng ở Singapore.</p></div>
+      </article>
+      <div class="rating" aria-hidden="true">
+        <span class="rate rate-again">Quên</span><span class="rate rate-hard">Khó</span><span class="rate rate-good">Nhớ</span><span class="rate rate-easy">Dễ</span>
+      </div>
+      <p class="preview-cap">Lật thẻ, tự đánh giá mức nhớ. Từ càng dễ thì càng lâu mới gặp lại.</p>
+    </div>
+  </section>
+
+  <section class="band" aria-label="Điểm chính">
+    <div class="band-inner">
+      <ul class="points">
+        <li><i data-icon="rotate-ccw"></i><div><b>Ôn đúng lúc</b><p>Lặp lại ngắt quãng: thẻ khó gặp lại sớm, thẻ đã thuộc giãn dần.</p></div></li>
+        <li><i data-icon="library"></i><div><b>Bộ thẻ theo chủ đề</b><p>Du lịch, công sở, IELTS… hoặc tự soạn bộ của riêng bạn.</p></div></li>
+        <li><i data-icon="notebook"></i><div><b>Luyện tập và sổ tay</b><p>Từ làm sai được gom vào sổ tay để luyện lại đến khi thuộc.</p></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="featured" aria-labelledby="featured-title">
+    <h2 id="featured-title">Bộ thẻ nổi bật</h2>
+    <p class="muted">Nội dung mẫu do đội ngũ biên soạn, miễn phí cho mọi tài khoản.</p>
+    <ul class="decks" id="decks"></ul>
+  </section>
+</main>
+<footer class="foot">© 2026 VocabLearning — đồ án tốt nghiệp. Trình độ trong ứng dụng là trình độ bạn tự đánh giá theo khung CEFR.</footer>
+
+<script src="../shared/demo.js"></script>
+<script src="../shared/app.js"></script>
+<script>
+(() => {
+  const D = VLDemo;
+  const me = D.account();
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  document.getElementById('top-actions').innerHTML = me
+    ? `<a class="btn btn-primary" href="${D.home()}">Vào học</a>`
+    : `<a class="btn btn-ghost" href="dang-nhap">Đăng nhập</a> <a class="btn btn-primary hide-sm" href="dang-ky">Đăng ký</a>`;
+  document.getElementById('hero-actions').innerHTML = me
+    ? `<a class="btn btn-primary btn-lg" href="${D.home()}">Tiếp tục học</a>`
+    : `<a class="btn btn-primary btn-lg" href="dang-ky">Tạo tài khoản miễn phí</a><a class="btn btn-secondary btn-lg" href="dang-nhap">Đăng nhập</a>`;
+  const topic = (id) => D.ALL_TOPICS.find((t) => t.id === id)?.name;
+  document.getElementById('decks').innerHTML = D.DECKS.filter((d) => d.source === 'ADMIN').map((d) => `
+    <li><div class="d-body"><a class="d-title" href="bo-the?id=${d.id}">${esc(d.title)}</a>
+      <p class="muted">${esc(d.description)}</p>
+      <div class="d-meta"><span class="badge badge-info">${d.level}</span><span class="badge">${d.cards.length} thẻ</span><span class="badge">${esc(topic(d.topic))}</span></div></div>
+      <a class="btn btn-secondary" href="bo-the?id=${d.id}">Xem bộ thẻ</a></li>`).join('');
+})();
+</script>
+</body>
+</html>

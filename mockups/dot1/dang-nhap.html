@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Đăng nhập — VocabLearning</title>
+  <link rel="icon" href="../shared/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    body[data-state="live"] [data-show-when~="live"] { display: block; }
+    /* Không đặt display cho .auth-card: sẽ đè quy tắc ẩn/hiện theo trạng thái */
+    .auth-card > * + * { margin-top: var(--sp-5); }
+    .auth-card h1 { font-size: var(--fs-page); line-height: var(--lh-tight); }
+    .auth-card .lead { color: var(--text-muted); margin-top: var(--sp-2); }
+    .form { display: flex; flex-direction: column; gap: var(--sp-4); }
+    .input { width: 100%; min-width: 0; }
+    .pw { position: relative; }
+    .pw .input { padding-right: 52px; }
+    .pw .btn-icon { position: absolute; right: 0; top: 0; color: var(--text-muted); }
+    .label-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); }
+    .label-row a { font-size: var(--fs-caption); }
+    .form .btn:not(.btn-icon), .btn-google { width: 100%; }
+    .divider { display: flex; align-items: center; gap: var(--sp-3); color: var(--text-muted); font-size: var(--fs-caption); }
+    .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--divider); }
+    .btn-google .g { width: 18px; height: 18px; flex: none; }
+    .auth-foot { text-align: center; color: var(--text-muted); }
+    .alert a { font-weight: 600; }
+    .state-icon { width: 48px; height: 48px; border-radius: var(--r-panel); display: grid; place-items: center;
+      background: var(--success-bg); color: var(--success); }
+    .welcome-name { overflow-wrap: anywhere; }
+    .auth-aside .auth-hero { max-width: 360px; width: 100%; margin-bottom: auto; background: transparent;
+      border-color: var(--on-primary-divider); color: var(--on-primary); }
+    .auth-aside .auth-hero figcaption b { color: var(--on-primary); }
+  </style>
+</head>
+<!--
+  UI03 Đăng nhập — route /dang-nhap?quay-lai=/hoc — FE F1.3 — BE B1.3 (TK-03)
+  API: POST /api/v1/auth/login {email,password} → 200 {id,email,displayName,roles,status} + cookie VOCAB_SESSION
+       401 INVALID_CREDENTIALS | 403 EMAIL_NOT_VERIFIED | 403 ACCOUNT_LOCKED | 400 VALIDATION_FAILED | 429 RATE_LIMITED
+       POST /api/v1/auth/logout → 204 (nút "Đăng xuất" ở màn thành công, để thử lại)
+       Google: GET /oauth2/authorization/google (điều hướng cả trang) → lỗi quay về /dang-nhap?loi=<CODE>
+  "API thật": dùng tài khoản đã xác thực (đăng ký ở dang-ky, xác thực ở xac-thuc-email)
+-->
+<body data-states="loading empty error success live" data-state="live">
+<main class="auth" id="main">
+  <aside class="auth-aside" aria-label="Giới thiệu VocabLearning">
+    <a class="brand" href="trang-chu"><img class="brand-mark" src="../shared/assets/logo-mark-inverse.svg" alt="" width="28" height="28"><span>Vocab<span class="brand-accent">Learning</span></span></a>
+    <h2>Chào mừng trở lại. Hôm nay ôn tiếp nhé.</h2>
+    <ul>
+      <li><i data-icon="check"></i><span>Thẻ đến hạn đã xếp sẵn theo lịch lặp lại ngắt quãng.</span></li>
+      <li><i data-icon="check"></i><span>Chuỗi ngày học và tiến độ được giữ trên mọi thiết bị.</span></li>
+    </ul>
+    <figure class="img-slot auth-hero" data-src="../shared/assets/images/auth-hero.png" data-alt="" style="aspect-ratio:4/3">
+      <i data-icon="image"></i>
+      <figcaption><b>Minh họa trang đăng nhập</b><span>auth-hero · 960×720 (dùng chung với trang đăng ký)</span></figcaption>
+    </figure>
+  </aside>
+
+  <div class="auth-main">
+  <div class="auth-form">
+  <a class="brand" href="trang-chu"><img class="brand-mark" src="../shared/assets/logo-mark.svg" alt="" width="28" height="28"><span>Vocab<span class="brand-accent">Learning</span></span></a>
+
+  <section class="auth-card" data-show-when="loading empty error live" aria-labelledby="title">
+    <div>
+      <h1 id="title">Đăng nhập</h1>
+      <p class="lead">Tiếp tục lịch học và các bộ thẻ của bạn.</p>
+    </div>
+
+    <div class="alert alert-danger" id="form-alert" role="alert" hidden>
+      <i data-icon="circle-alert"></i>
+      <div><p id="form-alert-text"></p><p class="trace" id="form-alert-trace" hidden>Mã lỗi: <code></code></p></div>
+    </div>
+
+    <form class="form" id="login" novalidate>
+      <div class="field" data-field="email">
+        <label for="email">Email</label>
+        <input class="input" id="email" name="email" type="email" autocomplete="username" inputmode="email" maxlength="254" required aria-describedby="email-error">
+        <span class="field-error" id="email-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+      </div>
+
+      <div class="field" data-field="password">
+        <div class="label-row"><label for="password">Mật khẩu</label><a href="quen-mat-khau">Quên mật khẩu?</a></div>
+        <div class="pw">
+          <input class="input" id="password" name="password" type="password" autocomplete="current-password" maxlength="128" required aria-describedby="password-error">
+          <button class="btn btn-ghost btn-icon" type="button" data-toggle-pw="password" aria-label="Hiện mật khẩu" aria-pressed="false"><i data-icon="eye"></i></button>
+        </div>
+        <span class="field-error" id="password-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+      </div>
+
+      <button class="btn btn-primary btn-lg" type="submit" id="submit">Đăng nhập</button>
+    </form>
+
+    <p class="divider">hoặc</p>
+    <a class="btn btn-secondary btn-lg btn-google" id="google" href="#">
+      <svg class="g" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.3H12v4.3h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2.1-1.9 3.2-4.8 3.2-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.7c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.8 14.2a6.6 6.6 0 0 1 0-4.3V7.1H2.1a11 11 0 0 0 0 9.9l3.7-2.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7.1l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z"/></svg>
+      Tiếp tục với Google
+    </a>
+
+    <p class="auth-foot">Chưa có tài khoản? <a href="dang-ky.html">Đăng ký</a></p>
+  </section>
+
+  <section class="auth-card" data-show-when="success" aria-labelledby="done-title" tabindex="-1" id="done">
+    <span class="state-icon"><i data-icon="check"></i></span>
+    <div>
+      <h1 id="done-title">Xin chào, <span class="welcome-name" id="welcome-name">Nguyễn Thị Thanh Hương — lớp tiếng Anh giao tiếp buổi tối</span></h1>
+      <p class="lead">Ứng dụng thật chuyển ngay tới <code id="next-path">/hoc</code>; màn này chỉ để minh họa.</p>
+    </div>
+    <button class="btn btn-secondary" type="button" id="logout"><i data-icon="log-out"></i>Đăng xuất</button>
+  </section>
+  </div>
+  </div>
+</main>
+
+<script src="../shared/demo.js"></script>
+<script src="../shared/app.js"></script>
+<script>
+(() => {
+  const form = document.getElementById('login');
+  const submit = document.getElementById('submit');
+  const alertBox = document.getElementById('form-alert');
+  const params = new URLSearchParams(location.search);
+  // Chỉ nhận đường dẫn nội bộ để tránh chuyển hướng mở (open redirect)
+  const next = /^\/(?!\/)/.test(params.get('quay-lai') || '') ? params.get('quay-lai') : '/hoc';
+  document.getElementById('google').href = VL.API_BASE.replace(/\/api\/v1$/, '') + '/oauth2/authorization/google';
+
+  // Lỗi quay về từ Google (?loi=) và lỗi của POST /auth/login dùng chung nội dung
+  const MESSAGES = {
+    INVALID_CREDENTIALS: ['danger', 'Email hoặc mật khẩu không đúng. Kiểm tra lại rồi thử lần nữa.'],
+    EMAIL_NOT_VERIFIED: ['warning', 'Email chưa được xác thực. Mở liên kết trong email, hoặc <a href="xac-thuc-email">gửi lại email xác thực</a>.'],
+    ACCOUNT_LOCKED: ['danger', 'Tài khoản đã bị khóa. Hãy liên hệ quản trị viên nếu bạn cho rằng đây là nhầm lẫn.'],
+    GOOGLE_EMAIL_IN_USE: ['warning', 'Email Google này đã có tài khoản. Hãy đăng nhập bằng mật khẩu, sau đó liên kết Google trong Cài đặt.'],
+    GOOGLE_CANCELLED: ['info', 'Bạn đã hủy đăng nhập bằng Google.'],
+    GOOGLE_FAILED: ['danger', 'Chưa đăng nhập được bằng Google. Hãy thử lại sau ít phút.'],
+    RATE_LIMITED: ['danger', 'Bạn đã thử đăng nhập quá nhiều lần. Vui lòng đợi rồi thử lại.'],
+  };
+
+  const showAlert = (code, traceId, fallback) => {
+    const [tone, html] = MESSAGES[code] || ['danger', fallback || ''];
+    alertBox.hidden = !code && !fallback;
+    alertBox.className = `alert alert-${tone}`;
+    document.getElementById('form-alert-text').innerHTML = html;
+    const t = document.getElementById('form-alert-trace');
+    t.hidden = !traceId; t.querySelector('code').textContent = traceId || '';
+  };
+
+  const setFieldErrors = (errors) => {
+    form.querySelectorAll('[data-field]').forEach((f) => {
+      const msg = errors[f.dataset.field];
+      const input = f.querySelector('input');
+      const err = f.querySelector('.field-error');
+      f.toggleAttribute('data-invalid', !!msg);
+      input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+      err.hidden = !msg; err.querySelector('span').textContent = msg || '';
+    });
+    form.querySelector('[data-invalid] input')?.focus();
+  };
+
+  const setBusy = (busy) => {
+    submit.disabled = busy; submit.setAttribute('aria-busy', busy);
+    form.querySelectorAll('input').forEach((i) => (i.readOnly = busy));
+  };
+
+  let timer;
+  const countdown = (detail) => {
+    let s = +(detail?.match(/(\d+)\s*giây/)?.[1] || 60);
+    clearInterval(timer); submit.disabled = true;
+    const tick = () => {
+      if (s <= 0) { clearInterval(timer); submit.disabled = false; submit.textContent = 'Đăng nhập'; return; }
+      submit.textContent = `Thử lại sau ${s} giây`; s -= 1;
+    };
+    tick(); timer = setInterval(tick, 1000);
+  };
+
+  const showDone = async (user) => {
+    if (VL.demo && user) { location.href = params.get('quay-lai') ? next : VL.demo.home(); return; } // demo: vào thẳng ứng dụng
+    if (user) document.getElementById('welcome-name').textContent = user.displayName;
+    document.getElementById('next-path').textContent = next;
+    document.body.dataset.state = 'success';
+    document.getElementById('done').focus();
+  };
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const email = form.email.value.trim();
+    const password = form.password.value;
+    const errors = {};
+    if (!email) errors.email = 'Vui lòng nhập email.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Email không đúng định dạng.';
+    if (!password) errors.password = 'Vui lòng nhập mật khẩu.';
+    setFieldErrors(errors); showAlert(null);
+    if (Object.keys(errors).length) return;
+    if (document.body.dataset.state !== 'live') return showDone();
+
+    setBusy(true);
+    try {
+      const { body } = await VL.send('POST', '/auth/login', { email, password });
+      showDone(body);
+    } catch (e) {
+      if (e.code === 'VALIDATION_FAILED') {
+        const byField = {};
+        (e.fieldErrors || []).forEach((f) => { byField[f.field] ??= f.message; });
+        setFieldErrors(byField);
+      } else if (e.code === 'RATE_LIMITED') {
+        showAlert(e.code); countdown(e.detail);
+      } else if (MESSAGES[e.code]) {
+        showAlert(e.code);
+        if (e.code === 'INVALID_CREDENTIALS') { form.password.value = ''; form.password.focus(); }
+      } else {
+        showAlert(null, e.traceId, 'Chưa đăng nhập được. Kiểm tra kết nối rồi thử lại sau ít phút.');
+      }
+    } finally {
+      const waiting = submit.textContent !== 'Đăng nhập'; // đang đếm ngược 429 thì giữ nút khóa
+      setBusy(false);
+      if (waiting) submit.disabled = true;
+    }
+  });
+
+  document.getElementById('logout').addEventListener('click', async (ev) => {
+    const btn = ev.currentTarget; btn.disabled = true;
+    try { await VL.send('POST', '/auth/logout'); VL.toast('Đã đăng xuất'); } catch (e) { VL.toast('Chưa đăng xuất được', 'error'); }
+    btn.disabled = false; form.reset(); document.body.dataset.state = 'live';
+  });
+
+  document.querySelectorAll('[data-toggle-pw]').forEach((b) => b.addEventListener('click', () => {
+    const input = document.getElementById(b.dataset.togglePw);
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    b.setAttribute('aria-pressed', show);
+    b.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+  }));
+
+  // Thanh mockup: dữ liệu mẫu cho từng trạng thái
+  document.addEventListener('mock:state', ({ detail: s }) => {
+    clearInterval(timer); submit.textContent = 'Đăng nhập';
+    setBusy(false); setFieldErrors({}); showAlert(null); form.reset();
+    if (s === 'loading') { form.email.value = 'lan.anh@example.com'; form.password.value = 'hoc-tu-vung-moi-ngay'; setBusy(true); }
+    if (s === 'empty') showAlert('GOOGLE_EMAIL_IN_USE');
+    if (s === 'error') {
+      form.email.value = 'nguyen.thi.thanh.huong.hoc.tieng.anh.moi.ngay@truong-dai-hoc-ngoai-ngu.edu.vn';
+      showAlert('EMAIL_NOT_VERIFIED');
+    }
+  });
+
+  if (params.get('loi')) showAlert(params.get('loi'));
+  // Demo: Google đăng nhập vào tài khoản đã liên kết Google (Cài đặt → Bảo mật)
+  document.getElementById('google').addEventListener('click', async (ev) => {
+    if (!VL.demo) return;
+    ev.preventDefault();
+    try { showDone((await VL.send('POST', '/auth/demo-google')).body); } catch (e) { showAlert(e.code); }
+  });
+})();
+</script>
+</body>
+</html>

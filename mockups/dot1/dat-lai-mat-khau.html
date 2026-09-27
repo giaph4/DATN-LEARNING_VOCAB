@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Đặt lại mật khẩu — VocabLearning</title>
+  <link rel="icon" href="../shared/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    body[data-state="live"] [data-show-when~="live"] { display: block; }
+    /* Không đặt display cho .auth-card: sẽ đè quy tắc ẩn/hiện theo trạng thái */
+    .auth-card > * + * { margin-top: var(--sp-5); }
+    .auth-card h1 { font-size: var(--fs-page); line-height: var(--lh-tight); }
+    .auth-card .lead { color: var(--text-muted); margin-top: var(--sp-2); }
+    .form { display: flex; flex-direction: column; gap: var(--sp-4); }
+    .input { width: 100%; min-width: 0; }
+    .pw { position: relative; }
+    .pw .input { padding-right: 52px; }
+    .pw .btn-icon { position: absolute; right: 0; top: 0; color: var(--text-muted); }
+    .form .btn:not(.btn-icon), .done .btn { width: 100%; }
+    .state-icon { width: 48px; height: 48px; border-radius: var(--r-panel); display: grid; place-items: center;
+      background: var(--success-bg); color: var(--success); }
+    .state-icon.bad { background: var(--danger-bg); color: var(--danger); }
+    .auth-aside .auth-hero { max-width: 360px; width: 100%; margin-bottom: auto; background: transparent;
+      border-color: var(--on-primary-divider); color: var(--on-primary); }
+    .auth-aside .auth-hero figcaption b { color: var(--on-primary); }
+  </style>
+</head>
+<!--
+  UI04 Đặt lại mật khẩu — route /dat-lai-mat-khau?token=… — FE F1.4 — BE B1.4 (TK-05)
+  API: POST /api/v1/auth/reset-password {token,newPassword} → 200 {message}; mọi phiên cũ bị thu hồi
+       400 TOKEN_INVALID | TOKEN_EXPIRED | VALIDATION_FAILED (fieldErrors.newPassword)
+  "API thật": mở http://localhost:5173/dot1/dat-lai-mat-khau?token=<mã từ Mailpit> (không có .html: `serve` làm mất ?token=)
+-->
+<body data-states="loading empty error success live" data-state="live">
+<main class="auth" id="main">
+  <aside class="auth-aside" aria-label="Giới thiệu VocabLearning">
+    <a class="brand" href="trang-chu"><img class="brand-mark" src="../shared/assets/logo-mark-inverse.svg" alt="" width="28" height="28"><span>Vocab<span class="brand-accent">Learning</span></span></a>
+    <h2>Đặt mật khẩu mới, học tiếp ngay.</h2>
+    <ul>
+      <li><i data-icon="check"></i><span>Nên dùng một cụm từ dài, dễ nhớ với bạn.</span></li>
+      <li><i data-icon="check"></i><span>Mọi thiết bị đang đăng nhập sẽ được đăng xuất để bảo vệ tài khoản.</span></li>
+    </ul>
+    <figure class="img-slot auth-hero" data-src="../shared/assets/images/auth-hero.png" data-alt="" style="aspect-ratio:4/3">
+      <i data-icon="image"></i>
+      <figcaption><b>Minh họa trang tài khoản</b><span>auth-hero · 960×720 (dùng chung các trang tài khoản)</span></figcaption>
+    </figure>
+  </aside>
+
+  <div class="auth-main">
+  <div class="auth-form">
+  <a class="brand" href="trang-chu"><img class="brand-mark" src="../shared/assets/logo-mark.svg" alt="" width="28" height="28"><span>Vocab<span class="brand-accent">Learning</span></span></a>
+
+  <section class="auth-card" data-show-when="loading live" aria-labelledby="title">
+    <div>
+      <h1 id="title">Đặt mật khẩu mới</h1>
+      <p class="lead">Mật khẩu từ 10 đến 128 ký tự. Sau khi lưu, bạn đăng nhập lại bằng mật khẩu mới.</p>
+    </div>
+
+    <div class="alert alert-danger" id="form-alert" role="alert" hidden>
+      <i data-icon="circle-alert"></i>
+      <div><p id="form-alert-text"></p><p class="trace" id="form-alert-trace" hidden>Mã lỗi: <code></code></p></div>
+    </div>
+
+    <form class="form" id="reset" novalidate>
+      <div class="field" data-field="newPassword">
+        <label for="newPassword">Mật khẩu mới</label>
+        <div class="pw">
+          <input class="input" id="newPassword" name="newPassword" type="password" autocomplete="new-password" maxlength="128" required aria-describedby="newPassword-hint newPassword-error">
+          <button class="btn btn-ghost btn-icon" type="button" data-toggle-pw="newPassword" aria-label="Hiện mật khẩu" aria-pressed="false"><i data-icon="eye"></i></button>
+        </div>
+        <span class="hint" id="newPassword-hint">Ít nhất 10 ký tự. Nên dùng một cụm từ dễ nhớ.</span>
+        <span class="field-error" id="newPassword-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+      </div>
+      <div class="field" data-field="confirm">
+        <label for="confirm">Nhập lại mật khẩu mới</label>
+        <input class="input" id="confirm" name="confirm" type="password" autocomplete="new-password" maxlength="128" required aria-describedby="confirm-error">
+        <span class="field-error" id="confirm-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+      </div>
+      <button class="btn btn-primary btn-lg" type="submit" id="submit">Lưu mật khẩu mới</button>
+    </form>
+  </section>
+
+  <!-- Không có mã / mã sai / hết hạn / đã dùng -->
+  <section class="auth-card" data-show-when="empty error" aria-labelledby="bad-title">
+    <span class="state-icon bad"><i data-icon="circle-alert"></i></span>
+    <div>
+      <h1 id="bad-title">Liên kết đặt lại đã hết hạn</h1>
+      <p class="lead" id="bad-lead">Liên kết đặt lại mật khẩu đã hết hạn sau 15 phút. Hãy yêu cầu liên kết mới.</p>
+    </div>
+    <a class="btn btn-primary btn-lg" href="quen-mat-khau" style="width:100%">Yêu cầu liên kết mới</a>
+  </section>
+
+  <section class="auth-card done" data-show-when="success" aria-labelledby="done-title" tabindex="-1" id="done">
+    <span class="state-icon"><i data-icon="check"></i></span>
+    <div>
+      <h1 id="done-title">Đã đổi mật khẩu</h1>
+      <p class="lead" id="done-message">Đã đặt lại mật khẩu. Hãy đăng nhập bằng mật khẩu mới.</p>
+    </div>
+    <a class="btn btn-primary btn-lg" href="dang-nhap"><i data-icon="log-in"></i>Đăng nhập</a>
+  </section>
+  </div>
+  </div>
+</main>
+
+<script src="../shared/demo.js"></script>
+<script src="../shared/app.js"></script>
+<script>
+(() => {
+  const form = document.getElementById('reset');
+  const submit = document.getElementById('submit');
+  const BAD = {
+    NO_TOKEN: ['Thiếu liên kết đặt lại', 'Hãy mở trang này từ liên kết trong email "Đặt lại mật khẩu VocabLearning", hoặc yêu cầu liên kết mới.'],
+    TOKEN_EXPIRED: ['Liên kết đặt lại đã hết hạn', 'Liên kết đặt lại mật khẩu đã hết hạn sau 15 phút. Hãy yêu cầu liên kết mới.'],
+    TOKEN_INVALID: ['Liên kết đặt lại không dùng được', 'Liên kết không hợp lệ hoặc đã được dùng. Hãy yêu cầu liên kết mới.'],
+  };
+
+  // Đọc mã một lần rồi xóa khỏi thanh địa chỉ
+  let token = new URLSearchParams(location.search).get('token');
+  if (token) history.replaceState(null, '', location.pathname);
+
+  const showBad = (code, detail) => {
+    const [title, lead] = BAD[code] || BAD.TOKEN_INVALID;
+    document.getElementById('bad-title').textContent = title;
+    document.getElementById('bad-lead').textContent = detail || lead;
+    document.body.dataset.state = 'error';
+  };
+
+  const setFieldErrors = (errors) => {
+    form.querySelectorAll('[data-field]').forEach((f) => {
+      const msg = errors[f.dataset.field];
+      const input = f.querySelector('input');
+      const err = f.querySelector('.field-error');
+      f.toggleAttribute('data-invalid', !!msg);
+      input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+      err.hidden = !msg; err.querySelector('span').textContent = msg || '';
+    });
+    form.querySelector('[data-invalid] input')?.focus();
+  };
+
+  const showAlert = (text, traceId) => {
+    document.getElementById('form-alert').hidden = !text;
+    document.getElementById('form-alert-text').textContent = text || '';
+    const t = document.getElementById('form-alert-trace');
+    t.hidden = !traceId; t.querySelector('code').textContent = traceId || '';
+  };
+
+  const setBusy = (busy) => {
+    submit.disabled = busy; submit.setAttribute('aria-busy', busy);
+    form.querySelectorAll('input').forEach((i) => (i.readOnly = busy));
+  };
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const newPassword = form.newPassword.value;
+    const errors = {};
+    if (!newPassword) errors.newPassword = 'Vui lòng nhập mật khẩu mới.';
+    else if (newPassword.length < 10 || newPassword.length > 128) errors.newPassword = 'Mật khẩu phải từ 10 đến 128 ký tự.';
+    if (form.confirm.value !== newPassword) errors.confirm = 'Mật khẩu nhập lại chưa khớp.';
+    setFieldErrors(errors); showAlert(null);
+    if (Object.keys(errors).length) return;
+    if (document.body.dataset.state !== 'live') { document.body.dataset.state = 'success'; return; }
+
+    setBusy(true);
+    try {
+      const { body } = await VL.send('POST', '/auth/reset-password', { token, newPassword });
+      document.getElementById('done-message').textContent = body?.message || '';
+      document.body.dataset.state = 'success';
+      document.getElementById('done').focus();
+    } catch (e) {
+      if (e.code === 'TOKEN_EXPIRED' || e.code === 'TOKEN_INVALID') showBad(e.code, e.detail);
+      else if (e.code === 'VALIDATION_FAILED' && e.fieldErrors?.some((f) => f.field === 'token')) showBad('TOKEN_INVALID');
+      else if (e.code === 'VALIDATION_FAILED') {
+        const byField = {};
+        e.fieldErrors.forEach((f) => { byField[f.field] ??= f.message; });
+        setFieldErrors(byField);
+      } else showAlert('Chưa lưu được mật khẩu. Kiểm tra kết nối rồi thử lại sau ít phút.', e.traceId);
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  document.querySelectorAll('[data-toggle-pw]').forEach((b) => b.addEventListener('click', () => {
+    const input = document.getElementById(b.dataset.togglePw);
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    b.setAttribute('aria-pressed', show);
+    b.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+  }));
+
+  document.addEventListener('mock:state', ({ detail: s }) => {
+    setBusy(false); setFieldErrors({}); showAlert(null); form.reset();
+    if (s === 'loading') { form.newPassword.value = form.confirm.value = 'hoc-tu-vung-moi-ngay'; setBusy(true); }
+    if (s === 'empty') showBad('NO_TOKEN');
+    if (s === 'error') showBad('TOKEN_EXPIRED');
+    if (s === 'live' && !token) showBad('NO_TOKEN');
+  });
+  if (document.body.dataset.state === 'live' && !token) showBad('NO_TOKEN');
+})();
+</script>
+</body>
+</html>

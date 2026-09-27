@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Bộ thẻ — VocabLearning</title>
+  <link rel="icon" href="../shared/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    .deck-head h1 { overflow-wrap: anywhere; max-width: 32ch; }
+    .deck-meta { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
+    .deck-progress { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-4); font-size: var(--fs-caption); color: var(--text-muted); max-width: 480px; }
+    .deck-progress .progress { flex: 1; }
+    .actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-5); }
+    .fav[aria-pressed="true"] svg { fill: var(--accent); stroke: var(--accent-text); }
+    .cards-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: var(--sp-3); margin: var(--sp-7) 0 var(--sp-3); }
+    .cards-head h2 { font-size: 18px; }
+    .cards-head .input { width: 280px; }
+    .word-cell b { font-size: 17px; }
+    .word-cell .ipa { display: block; color: var(--text-muted); font-size: var(--fs-caption); }
+    .table td { vertical-align: middle; }
+    @media (max-width: 1023.98px) {
+      .actions .btn { flex: 1; }
+      .cards-head .input { width: 100%; }
+    }
+  </style>
+</head>
+<!-- Chi tiết bộ thẻ + danh sách thẻ — route /bo-the/[id], /bo-the/[id]/the — FE F1.9, F1.11 (UI09, UI11).
+     Demo tĩnh: ?id=d1…d5 (bản thật: GET /decks/{id}, GET /decks/{id}/cards, POST /decks/{id}/copy). -->
+<body data-nav="thu-vien" data-auth="required">
+<a class="skip-link" href="#main">Bỏ qua điều hướng</a>
+<div class="app">
+  <header class="app-header"></header>
+  <nav class="sidebar" aria-label="Điều hướng chính"></nav>
+
+  <main class="main" id="main">
+    <div class="page">
+      <a class="back-link" href="thu-vien"><i data-icon="chevron-left"></i>Thư viện</a>
+
+      <div id="found" hidden>
+        <section class="deck-head" aria-labelledby="title">
+          <h1 id="title"></h1>
+          <p class="muted" id="desc" style="margin-top:var(--sp-2)"></p>
+          <div class="deck-meta" id="meta"></div>
+          <div class="deck-progress" id="progress"></div>
+          <div class="actions" id="actions"></div>
+        </section>
+
+        <section aria-labelledby="cards-title">
+          <div class="cards-head">
+            <h2 id="cards-title">Danh sách thẻ</h2>
+            <input class="input" id="q" type="search" placeholder="Tìm từ hoặc nghĩa" aria-label="Tìm thẻ trong bộ">
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Từ</th><th>Nghĩa</th><th>Trạng thái</th><th><span class="visually-hidden">Nghe</span></th></tr></thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+          <p class="muted" id="no-card" hidden style="margin-top:var(--sp-3)">Không có thẻ nào khớp “<span id="no-card-q"></span>”.</p>
+        </section>
+      </div>
+
+      <div class="state" id="missing" hidden style="margin-top:var(--sp-4)">
+        <h3>Không tìm thấy bộ thẻ</h3>
+        <p class="muted">Bộ thẻ này không tồn tại hoặc đã bị ẩn.</p>
+        <a class="btn btn-primary" href="thu-vien">Về Thư viện</a>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Điều hướng chính"></nav>
+</div>
+
+<script src="../shared/demo.js"></script>
+<script src="../shared/app.js"></script>
+<script>
+(() => {
+  const D = VLDemo;
+  if (!D.account()) return;
+  const l = D.learning();
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const d = D.deck(new URLSearchParams(location.search).get('id'));
+  if (!d) { $('missing').hidden = false; return; }
+  $('found').hidden = false;
+  document.title = `${d.title} — VocabLearning`;
+  l.copies ||= [];
+
+  const renderHead = () => {
+    const studying = l.studying.includes(d.id);
+    const fav = l.favorites.includes(d.id);
+    const p = D.deckProgress(d.id);
+    $('title').textContent = d.title;
+    $('desc').textContent = d.description;
+    $('meta').innerHTML = `<span class="badge badge-info">${d.level}</span><span class="badge">${d.cards.length} thẻ</span>
+      <span class="badge">${esc(D.ALL_TOPICS.find((t) => t.id === d.topic)?.name)}</span>
+      <span class="badge">${d.source === 'ADMIN' ? 'Nội dung mẫu' : 'Tự soạn · Riêng tư'}</span>`;
+    $('progress').innerHTML = studying
+      ? `<div class="progress" aria-hidden="true"><span style="--value:${p.seen / p.total}"></span></div><span>Đã học ${p.seen}/${p.total} thẻ${p.due ? ` · ${p.due} thẻ đến hạn` : ''}</span>`
+      : '<span>Bạn chưa học bộ này.</span>';
+    const copied = l.copies.includes(d.id);
+    $('actions').innerHTML = `<a class="btn btn-accent btn-lg" href="../dot2/hoc-phien?bo=${d.id}">${studying ? 'Học bộ này' : 'Bắt đầu học bộ này'}</a>
+      <a class="btn btn-secondary" href="../dot2/luyen-tap?bo=${d.id}">Luyện tập</a>
+      ${d.source === 'ADMIN' ? `<button class="btn btn-secondary" type="button" id="copy" ${copied ? 'disabled' : ''}><i data-icon="copy"></i>${copied ? 'Đã sao chép' : 'Sao chép để chỉnh sửa'}</button>` : ''}
+      <button class="btn btn-ghost fav" type="button" id="fav" aria-pressed="${fav}"><i data-icon="star"></i>${fav ? 'Đã yêu thích' : 'Yêu thích'}</button>`;
+    VL.renderIcons($('actions'));
+  };
+
+  const status = (card) => {
+    const s = l.cards[card.id];
+    if (!s) return '<span class="badge">Mới</span>';
+    if (s.due <= Date.now()) return '<span class="badge badge-warning">Đến hạn ôn</span>';
+    return `<span class="badge badge-success">Ôn lại ${new Date(s.due).toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric' })}</span>`;
+  };
+  const renderRows = (q = '') => {
+    const k = q.toLocaleLowerCase('vi');
+    const cards = d.cards.filter((x) => !k || `${x.word} ${x.meaning}`.toLocaleLowerCase('vi').includes(k));
+    $('rows').innerHTML = cards.map((x) => `<tr>
+      <td data-label="Từ" class="word-cell"><b>${esc(x.word)}</b><span class="ipa">${esc(x.ipa)} · ${esc(x.pos)}</span></td>
+      <td data-label="Nghĩa">${esc(x.meaning)}</td>
+      <td data-label="Trạng thái">${status(x)}</td>
+      <td data-label="Nghe"><button class="btn btn-ghost btn-icon" type="button" data-speak="${esc(x.word)}" aria-label="Nghe ${esc(x.word)}"><i data-icon="volume-2"></i></button></td></tr>`).join('');
+    $('no-card').hidden = !!cards.length; $('no-card-q').textContent = q;
+    VL.renderIcons($('rows'));
+  };
+
+  $('q').addEventListener('input', (e) => renderRows(e.target.value.trim()));
+  document.addEventListener('click', (e) => {
+    const s = e.target.closest('[data-speak]');
+    if (s && 'speechSynthesis' in window) { speechSynthesis.cancel(); speechSynthesis.speak(Object.assign(new SpeechSynthesisUtterance(s.dataset.speak), { lang: 'en-US', rate: 0.9 })); }
+    if (e.target.closest('#fav')) {
+      const on = !l.favorites.includes(d.id);
+      l.favorites = on ? [...l.favorites, d.id] : l.favorites.filter((x) => x !== d.id);
+      D.save(); renderHead(); VL.toast(on ? 'Đã thêm vào Yêu thích' : 'Đã bỏ khỏi Yêu thích');
+    }
+    if (e.target.closest('#copy')) {
+      l.copies.push(d.id); D.save(); renderHead();
+      VL.toast('Đã sao chép bộ thẻ vào thư viện của bạn');
+    }
+  });
+  renderHead(); renderRows();
+})();
+</script>
+</body>
+</html>

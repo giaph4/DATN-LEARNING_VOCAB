@@ -1,0 +1,109 @@
+# Defaults = local dev (API on the host, services from compose.yaml). Override with env vars (see .env.example).
+spring:
+  application:
+    name: vocab-learning-api
+  profiles:
+    default: dev
+    group:
+      dev: api,worker
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3307/vocab_learning?connectionTimeZone=UTC&characterEncoding=UTF-8}
+    username: ${DB_USER:vocab}
+    password: ${DB_PASSWORD:vocab_dev_pw}
+  flyway:
+    enabled: true   # same account as the datasource
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+  session:
+    timeout: 30m
+    data:
+      redis:   # Boot 4: spring.session.data.redis.* (spring.session.redis.* đã bị bỏ)
+        repository-type: indexed   # tìm được mọi phiên của một người để thu hồi (TK-05)
+        namespace: vocab:session
+
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+  shutdown: graceful
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        name: VOCAB_SESSION
+        http-only: true
+        same-site: lax
+        secure: ${app.cookie-secure}
+
+app:
+  public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:3000}
+  cookie-secure: ${APP_COOKIE_SECURE:false}
+  cors-allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+  google:
+    # Trống = tắt đăng nhập Google (TK-03). Redirect URI khai báo ở Google Console: <API>/login/oauth2/code/google
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+  worker:
+    enabled: false
+    poll-delay: PT2S
+  storage:
+    endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+    public-endpoint: ${STORAGE_PUBLIC_ENDPOINT:http://localhost:9000}
+    bucket: ${STORAGE_BUCKET:vocab-media}
+    access-key: ${STORAGE_ACCESS_KEY:minioadmin}
+    secret-key: ${STORAGE_SECRET_KEY:minioadmin}
+    create-bucket: ${STORAGE_CREATE_BUCKET:false}
+  mail:
+    from: ${MAIL_FROM:no-reply@vocablearning.local}
+  ai:
+    fake: ${AI_FAKE:true}
+    api-key: ${LLM_PROVIDER_API_KEY:}
+  speech:
+    fake: ${SPEECH_FAKE:true}
+    key: ${SPEECH_PROVIDER_KEY:}
+    region: ${SPEECH_PROVIDER_REGION:southeastasia}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db,redis
+  health:
+    mail:
+      enabled: false   # SMTP down must not make the API "unhealthy"
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  pattern:
+    level: "%5p [%X{traceId:-}]"

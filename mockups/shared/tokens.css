@@ -1,0 +1,90 @@
+/* VocabLearning design tokens — source: frontend/design/YEU_CAU_GIAO_DIEN.md (§2, §3, §5).
+   FE copies these 1:1 into Next.js (globals.css / Tailwind theme). Change here + in the brief together. */
+:root {
+  /* Color (§2) — 60 % trung tính · 30 % xanh dương (+ xanh lá) · 10 % cam nhấn */
+  --bg: #F5F7FB;
+  --surface: #FFFFFF;
+  --text: #1B2536;
+  --text-muted: #536075;
+  --divider: #E2E7EF;
+  --control-border: #8391A3;
+  --primary: #1D5FD1;          /* xanh dương: hành động chính, mục đang chọn, liên kết */
+  --primary-hover: #184FB0;
+  --primary-active: #13408F;
+  --primary-strong: #16489E;   /* khối thương hiệu lớn (panel trang đăng nhập) */
+  --on-primary: #FFFFFF;
+  --on-primary-divider: rgba(255, 255, 255, 0.28);
+  --selected-bg: #E9F0FD;
+  --secondary: #1E7F55;        /* xanh lá: tiến độ, chuỗi ngày, hoàn thành */
+  --secondary-bg: #E6F4EC;
+  --accent: #F59E0B;           /* cam: CHỈ 1 lời kêu gọi học mỗi màn (Bắt đầu học, Làm bài) + điểm nhấn nhỏ */
+  --accent-hover: #E08A00;
+  --on-accent: #1B2536;        /* chữ tối trên nền cam (7:1); không dùng chữ trắng */
+  --accent-bg: #FFF4E0;
+  --accent-text: #9A5200;      /* chữ cam trên nền trắng */
+  --danger: #B3261E;   --danger-bg: #FDEEEC;   /* Quên / lỗi */
+  --warning: #8F5A00;  --warning-bg: #FFF4DE;  /* Khó / cảnh báo */
+  --success: #1C7249;  --success-bg: #E6F4EC;  /* Nhớ / thành công */
+  --info: #1D5FD1;     --info-bg: #E9F0FD;     /* Dễ / thông tin */
+  --focus-ring: #1D5FD1;
+  --scrim: rgba(27, 37, 54, 0.4);
+
+  /* Type (§3) — one family, weights 400/500/600 */
+  --font: "Be Vietnam Pro", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --fs-caption: 14px;
+  --fs-body: 16px;
+  --fs-example: 17px;
+  --fs-group: 20px;
+  --fs-meaning: 22px;
+  --fs-page: 28px;
+  --fs-word: 40px;          /* 32–44 desktop */
+  --fs-word-mobile: 32px;   /* 28–36 mobile */
+  --lh-body: 1.6;
+  --lh-tight: 1.25;
+
+  /* Spacing rhythm 4/8/12/16/24/32/40 */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 40px;
+
+  /* Radius: controls/deck 8–12, study card 16 */
+  --r-control: 8px;
+  --r-panel: 12px;
+  --r-card: 16px;
+
+  /* Only floating layers get a shadow */
+  --shadow-float: 0 12px 32px rgba(27, 37, 54, 0.14), 0 2px 6px rgba(27, 37, 54, 0.08);
+
+  /* Sizes */
+  --tap: 44px;        /* min touch target */
+  --tap-lg: 48px;
+  --icon: 20px;
+  --sidebar: 248px;
+  --content-max: 1040px;
+  --card-max: 720px;  /* study card 640–760 */
+
+  /* Layout (§4.0): desktop ≥ 1024 px = header + sidebar; < 1024 px = top bar + bottom nav */
+  --header-h: 64px;
+  --topbar-h: 56px;
+  --bottom-nav-h: 64px;
+
+  /* Motion (§5) */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-hover: 140ms;
+  --dur-menu: 160ms;
+  --dur-dialog: 200ms;
+  --dur-flip: 300ms;
+  --dur-next: 200ms;
+  --dur-progress: 240ms;
+  --dur-toast: 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-hover: 0ms;
+    --dur-menu: 0ms;
+    --dur-dialog: 80ms;
+    --dur-flip: 100ms;   /* flip becomes a ≤100 ms fade (see components.css) */
+    --dur-next: 80ms;
+    --dur-progress: 0ms;
+    --dur-toast: 80ms;
+  }
+}

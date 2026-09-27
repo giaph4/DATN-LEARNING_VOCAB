@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Chủ đề — VocabLearning</title>
+  <link rel="icon" href="../shared/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    .topics { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--divider); border-radius: var(--r-panel); }
+    .topics > li + li { border-top: 1px solid var(--divider); }
+    .topic { display: flex; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-4); }
+    .topic .check { min-height: 0; align-items: flex-start; }
+    .topic .check input { margin-top: 3px; }
+    .topic-name { font-weight: 500; }
+    .topic .muted { font-size: var(--fs-caption); }
+    .children { list-style: none; margin: 0 0 var(--sp-3) calc(var(--sp-4) + 32px); padding: 0 0 0 var(--sp-4); border-left: 2px solid var(--divider); }
+    .children .topic { padding: var(--sp-2) 0; }
+    @media (max-width: 1023.98px) { .picked { bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom)) !important; } }
+    .picked { position: sticky; bottom: 0; margin-top: var(--sp-5); padding: var(--sp-3) 0; background: var(--bg);
+      display: flex; gap: var(--sp-3); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  </style>
+</head>
+<!-- API GĐ0: GET /api/v1/topics (khách). Minh họa dùng ở F1.6 bước "chủ đề quan tâm" (UI06). -->
+<body data-states="loading empty error success live" data-state="live">
+<a class="skip-link" href="#main">Bỏ qua điều hướng</a>
+<div class="app">
+  <header class="app-header">
+    <a class="brand" href="../index.html"><img class="brand-mark" src="../shared/assets/logo-mark.svg" alt="" width="28" height="28"><span>Vocab<span class="brand-accent">Learning</span></span></a>
+  </header>
+  <nav class="sidebar" aria-label="Điều hướng chính">
+    <ul class="nav">
+      <li><a href="#"><i data-icon="book-open"></i>Học hôm nay</a></li>
+      <li><a href="#"><i data-icon="library"></i>Thư viện</a></li>
+    </ul>
+    <p class="nav-section">Tài khoản</p>
+    <ul class="nav"><li><a href="#" aria-current="page"><i data-icon="settings"></i>Cài đặt học</a></li></ul>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="page" style="max-width:720px">
+      <div class="page-head">
+        <div>
+          <p class="caption">Bước 2 / 4 — thiết lập học</p>
+          <h1>Bạn quan tâm chủ đề nào?</h1>
+          <p class="muted">Chọn vài chủ đề để gợi ý bộ thẻ phù hợp. Có thể đổi sau trong Cài đặt học.</p>
+        </div>
+      </div>
+
+      <div id="loading" hidden aria-busy="true" aria-label="Đang tải chủ đề">
+        <div class="panel stack">
+          <div class="skeleton" style="height:18px;width:40%"></div><div class="skeleton" style="height:14px;width:70%"></div>
+          <div class="skeleton" style="height:18px;width:35%;margin-top:var(--sp-3)"></div><div class="skeleton" style="height:14px;width:60%"></div>
+        </div>
+      </div>
+      <div id="empty" hidden class="state">
+        <figure class="img-slot" data-src="../shared/assets/images/empty-topics.webp" data-alt="" style="width:min(240px,100%);aspect-ratio:3/2">
+          <i data-icon="image"></i>
+          <figcaption><b>Minh họa trạng thái rỗng</b><span>empty-topics.webp · 480×320</span><span>Vài thư mục/nhãn chủ đề trống xếp gọn, nét phẳng, màu xám + xanh dương nhạt; không chữ.</span></figcaption>
+        </figure>
+        <h3>Chưa có chủ đề nào</h3>
+        <p class="muted">Quản trị viên chưa tạo chủ đề. Bạn có thể bỏ qua bước này.</p>
+        <button class="btn btn-secondary">Bỏ qua</button>
+      </div>
+      <div id="error" hidden class="state state-error" role="alert">
+        <h3>Không tải được chủ đề</h3>
+        <p class="muted" id="error-detail">Máy chủ tạm thời không phản hồi.</p>
+        <button class="btn btn-secondary" id="retry"><i data-icon="rotate-ccw"></i>Thử lại</button>
+        <p class="trace">Mã lỗi: <code id="trace">—</code></p>
+      </div>
+      <form id="success" hidden onsubmit="event.preventDefault(); VL.toast('Đã lưu chủ đề quan tâm')">
+        <fieldset style="border:0;padding:0;margin:0">
+          <legend class="visually-hidden">Chủ đề quan tâm</legend>
+          <ul class="topics" id="topics"></ul>
+        </fieldset>
+        <div class="picked">
+          <span class="caption" id="picked-count" aria-live="polite">Chưa chọn chủ đề nào</span>
+          <div class="row"><button type="button" class="btn btn-ghost">Bỏ qua</button><button class="btn btn-primary">Tiếp tục</button></div>
+        </div>
+        <p class="caption" id="source" style="margin-top:var(--sp-2)"></p>
+      </form>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Điều hướng chính">
+    <a href="#"><i data-icon="book-open"></i>Học</a>
+    <a href="#"><i data-icon="library"></i>Thư viện</a>
+    <a href="#"><i data-icon="pencil-line"></i>Luyện tập</a>
+    <a href="#"><i data-icon="notebook"></i>Sổ tay</a>
+    <a href="#" aria-current="page"><i data-icon="user"></i>Tôi</a>
+  </nav>
+</div>
+<script src="../shared/app.js"></script>
+<script>
+  // Dữ liệu mẫu = phản hồi thật đã ghi ở report/GD0_BAO_CAO_FE.md §3.2
+  const SAMPLE = [
+    { id: '7', slug: 'am-thuc', name: 'Ẩm thực', description: 'Món ăn, nấu ăn, nhà hàng', children: [] },
+    { id: '4', slug: 'cong-nghe', name: 'Công nghệ', description: 'Máy tính, phần mềm, Internet',
+      children: [{ id: '9', slug: 'lap-trinh', name: 'Lập trình', description: 'Thuật ngữ lập trình cơ bản', children: [] }] },
+    { id: '3', slug: 'cong-viec', name: 'Công việc', description: 'Văn phòng, họp, email', children: [] },
+    { id: '2', slug: 'du-lich', name: 'Du lịch', description: 'Sân bay, khách sạn, hỏi đường',
+      children: [{ id: '8', slug: 'san-bay', name: 'Sân bay', description: 'Làm thủ tục, hành lý', children: [] }] },
+    { id: '1', slug: 'giao-tiep', name: 'Giao tiếp hằng ngày', description: 'Từ vựng dùng trong đời sống hằng ngày', children: [] },
+  ];
+  const views = ['loading', 'empty', 'error', 'success'];
+  const show = (v) => views.forEach((id) => (document.getElementById(id).hidden = id !== v));
+
+  const item = (t) => `
+    <li>
+      <div class="topic">
+        <label class="check"><input type="checkbox" name="topicIds" value="${t.id}">
+          <span><span class="topic-name">${t.name}</span><br><span class="muted">${t.description ?? ''}</span></span></label>
+      </div>
+      ${t.children.length ? `<ul class="children">${t.children.map(item).join('')}</ul>` : ''}
+    </li>`;
+  const render = (topics, source) => {
+    if (!topics.length) return show('empty');
+    document.getElementById('topics').innerHTML = topics.map(item).join('');
+    document.getElementById('source').textContent = source;
+    show('success');
+  };
+  document.getElementById('topics').addEventListener('change', () => {
+    const n = document.querySelectorAll('[name=topicIds]:checked').length;
+    document.getElementById('picked-count').textContent = n ? `Đã chọn ${n} chủ đề` : 'Chưa chọn chủ đề nào';
+  });
+
+  const loadLive = async () => {
+    show('loading');
+    try {
+      render(await VL.api('/topics'), `Dữ liệu thật từ ${VL.API_BASE}/topics`);
+    } catch (e) {
+      document.getElementById('error-detail').textContent =
+        e.detail || 'Không kết nối được máy chủ. Kiểm tra backend đã chạy ở cổng 8080.';
+      document.getElementById('trace').textContent = e.traceId || '—';
+      show('error');
+    }
+  };
+  document.getElementById('retry').addEventListener('click', loadLive);
+  document.addEventListener('mock:state', ({ detail }) => {
+    if (detail === 'live') return loadLive();
+    if (detail === 'success') return render(SAMPLE, 'Dữ liệu mẫu (giống phản hồi thật)');
+    show(detail);
+  });
+  if (document.body.dataset.state === 'live') loadLive();
+</script>
+</body>
+</html>

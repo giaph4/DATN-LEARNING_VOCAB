@@ -1,0 +1,247 @@
+/* Components (F0.6). Class names map 1:1 to React components in frontend/src/components/ui. */
+
+/* State switching for mockups: <div data-show-when="loading|empty|error|success"> */
+body[data-state="loading"] [data-show-when~="loading"],
+body[data-state="empty"] [data-show-when~="empty"],
+body[data-state="error"] [data-show-when~="error"],
+body[data-state="success"] [data-show-when~="success"] { display: block; }
+
+/* ---------- Button ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: var(--tap); padding: 0 var(--sp-4); border-radius: var(--r-control);
+  border: 1px solid transparent; background: none; font-weight: 500; cursor: pointer; text-decoration: none;
+  transition: background-color var(--dur-hover) var(--ease), border-color var(--dur-hover) var(--ease),
+    color var(--dur-hover) var(--ease), transform var(--dur-hover) var(--ease);
+}
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled, .btn[aria-disabled="true"] { cursor: not-allowed; opacity: 0.55; }
+.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+.btn-primary:active:not(:disabled) { background: var(--primary-active); }
+.btn-accent { background: var(--accent); color: var(--on-accent); }
+.btn-accent:hover:not(:disabled) { background: var(--accent-hover); }
+.btn-secondary { background: var(--surface); border-color: var(--control-border); color: var(--text); }
+.btn-secondary:hover:not(:disabled) { background: var(--bg); }
+.btn-ghost { color: var(--primary); }
+.btn-ghost:hover:not(:disabled) { background: var(--selected-bg); }
+.btn-danger { background: var(--surface); border-color: var(--danger); color: var(--danger); }
+.btn-danger:hover:not(:disabled) { background: var(--danger-bg); }
+.btn-lg { min-height: var(--tap-lg); padding: 0 var(--sp-5); font-size: 17px; }
+.btn-icon { width: var(--tap); padding: 0; }
+.btn[aria-busy="true"] { color: transparent; position: relative; pointer-events: none; }
+.btn[aria-busy="true"]::after { content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid currentColor; border-color: var(--on-primary) transparent var(--on-primary) var(--on-primary);
+  animation: spin 700ms linear infinite; }
+.btn-secondary[aria-busy="true"]::after { border-color: var(--primary) transparent var(--primary) var(--primary); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Form fields ---------- */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label, .field .label { font-weight: 500; }
+.field .optional { font-weight: 400; color: var(--text-muted); font-size: var(--fs-caption); }
+.field .hint { font-size: var(--fs-caption); color: var(--text-muted); }
+.input, .select, .textarea {
+  width: 100%; min-height: var(--tap); padding: 10px var(--sp-3); background: var(--surface);
+  border: 1px solid var(--control-border); border-radius: var(--r-control);
+  transition: border-color var(--dur-hover) var(--ease), box-shadow var(--dur-hover) var(--ease);
+}
+.textarea { min-height: 96px; resize: vertical; }
+.input:hover, .select:hover, .textarea:hover { border-color: var(--text-muted); }
+.input:focus-visible, .select:focus-visible, .textarea:focus-visible {
+  outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary); }
+.field[data-invalid="true"] .input, .field[data-invalid="true"] .textarea, .field[data-invalid="true"] .select {
+  border-color: var(--danger); }
+.field-error { display: flex; gap: 6px; align-items: flex-start; font-size: var(--fs-caption); color: var(--danger); font-weight: 500; }
+.field-error .icon { width: 16px; height: 16px; margin-top: 2px; }
+.select { appearance: none; padding-right: 40px;
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2359675F' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center; }
+
+.check { display: inline-flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); cursor: pointer; }
+.check input { appearance: none; width: 20px; height: 20px; margin: 0; border: 1.5px solid var(--control-border);
+  border-radius: 5px; background: var(--surface) no-repeat center; display: grid; place-items: center;
+  transition: background-color var(--dur-hover) var(--ease), border-color var(--dur-hover) var(--ease); }
+.check input:checked { background-color: var(--primary); border-color: var(--primary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E"); }
+
+.switch { display: inline-flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); cursor: pointer; }
+.switch input { appearance: none; margin: 0; width: 40px; height: 24px; border-radius: 12px; position: relative;
+  background: var(--divider); border: 1px solid var(--control-border); cursor: pointer;
+  transition: background-color var(--dur-hover) var(--ease); }
+.switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--surface); box-shadow: 0 1px 2px rgba(36,51,46,.3); transition: transform var(--dur-hover) var(--ease); }
+.switch input:checked { background: var(--primary); border-color: var(--primary); }
+.switch input:checked::after { transform: translateX(16px); }
+
+/* ---------- Badge (always text, never color only) ---------- */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px;
+  font-size: var(--fs-caption); font-weight: 500; line-height: 1.5; background: var(--bg); color: var(--text-muted);
+  border: 1px solid var(--divider); }
+.badge-success { background: var(--success-bg); color: var(--success); border-color: transparent; }
+.badge-warning { background: var(--warning-bg); color: var(--warning); border-color: transparent; }
+.badge-danger { background: var(--danger-bg); color: var(--danger); border-color: transparent; }
+.badge-info { background: var(--info-bg); color: var(--info); border-color: transparent; }
+.badge-accent { background: var(--accent-bg); color: var(--accent-text); border-color: transparent; }
+
+/* ---------- Panel (plain bordered surface, no shadow) ---------- */
+.panel { background: var(--surface); border: 1px solid var(--divider); border-radius: var(--r-panel); padding: var(--sp-5); }
+
+/* ---------- Alert (inline, persistent) ---------- */
+.alert { display: flex; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-control); }
+.alert .icon { margin-top: 2px; }
+.alert-info { background: var(--info-bg); color: var(--info); }
+.alert-success { background: var(--success-bg); color: var(--success); }
+.alert-warning { background: var(--warning-bg); color: var(--warning); }
+.alert-danger { background: var(--danger-bg); color: var(--danger); }
+.alert p { color: var(--text); }
+
+/* ---------- Table → stacked rows on phones ---------- */
+.table-wrap { background: var(--surface); border: 1px solid var(--divider); border-radius: var(--r-panel); overflow: hidden; }
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { text-align: left; padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--divider); vertical-align: top; }
+.table th { font-size: var(--fs-caption); color: var(--text-muted); font-weight: 500; background: var(--bg); }
+.table tr:last-child td { border-bottom: 0; }
+.table td.num, .table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) {
+  .table thead { display: none; }
+  .table tr { display: block; padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--divider); }
+  .table td { display: flex; justify-content: space-between; gap: var(--sp-4); padding: 4px 0; border: 0; }
+  .table td::before { content: attr(data-label); color: var(--text-muted); font-size: var(--fs-caption); }
+  .table td.num { text-align: right; }
+}
+
+/* ---------- Pagination ---------- */
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-4); }
+.pagination .pages { display: flex; gap: 4px; }
+.page-btn { min-width: var(--tap); min-height: var(--tap); border-radius: var(--r-control); border: 1px solid transparent;
+  background: none; cursor: pointer; font-variant-numeric: tabular-nums; }
+.page-btn:hover { background: var(--surface); border-color: var(--divider); }
+.page-btn[aria-current="page"] { background: var(--selected-bg); font-weight: 600; border-color: var(--primary); }
+
+/* ---------- Skeleton (no shimmer sweep; gentle pulse, off with reduced motion) ---------- */
+.skeleton { background: var(--divider); border-radius: 6px; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
+/* ---------- Empty / error states ---------- */
+.state { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-6);
+  background: var(--surface); border: 1px dashed var(--control-border); border-radius: var(--r-panel); }
+.state h3 { font-size: 18px; }
+.state-error { border-style: solid; border-color: var(--danger-bg); background: var(--surface); }
+.state-error h3 { color: var(--danger); }
+.trace { font-size: var(--fs-caption); color: var(--text-muted); }
+.trace code { font-family: var(--font); font-variant-numeric: tabular-nums; }
+
+/* ---------- Dialog ---------- */
+.dialog-scrim { position: fixed; inset: 0; background: var(--scrim); display: grid; place-items: center; padding: var(--sp-4);
+  z-index: 40; opacity: 0; pointer-events: none; transition: opacity var(--dur-dialog) var(--ease); }
+.dialog-scrim[data-open="true"] { opacity: 1; pointer-events: auto; }
+.dialog { width: min(480px, 100%); background: var(--surface); border-radius: var(--r-panel); box-shadow: var(--shadow-float);
+  padding: var(--sp-5); transform: translateY(8px); transition: transform var(--dur-dialog) var(--ease); }
+.dialog-scrim[data-open="true"] .dialog { transform: none; }
+.dialog h2 { margin-bottom: var(--sp-2); }
+.dialog-actions { display: flex; justify-content: flex-end; gap: var(--sp-3); margin-top: var(--sp-5); flex-wrap: wrap; }
+
+/* ---------- Toast (aria-live region) ---------- */
+.toasts { position: fixed; left: 50%; bottom: var(--sp-5); transform: translateX(-50%); z-index: 45;
+  display: flex; flex-direction: column; gap: var(--sp-2); width: min(420px, calc(100vw - 32px)); }
+.toast { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-control);
+  background: var(--text); color: var(--on-primary); box-shadow: var(--shadow-float);
+  animation: toast-in var(--dur-toast) var(--ease); }
+.toast .icon { margin-top: 2px; }
+.toast-success .icon { color: var(--success-bg); }
+.toast-error .icon { color: var(--danger-bg); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* ---------- Progress ---------- */
+.progress { height: 6px; background: var(--divider); border-radius: 3px; overflow: hidden; }
+.progress > span { display: block; height: 100%; width: 100%; background: var(--secondary); border-radius: 3px;
+  transform-origin: left; transform: scaleX(var(--value, 0)); transition: transform var(--dur-progress) var(--ease); }
+
+/* ---------- Rating group Quên / Khó / Nhớ / Dễ (equal size & weight) ---------- */
+.rating { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); }
+.rate { min-height: var(--tap-lg); border-radius: var(--r-control); border: 1px solid transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: var(--sp-2); font-weight: 600;
+  transition: border-color var(--dur-hover) var(--ease), transform var(--dur-hover) var(--ease); }
+.rate:hover { border-color: currentColor; }
+.rate:active { transform: translateY(1px); }
+.rate kbd { font-family: var(--font); font-size: 12px; font-weight: 500; padding: 0 6px; border-radius: 4px;
+  border: 1px solid currentColor; opacity: 0.8; }
+.rate-again { background: var(--danger-bg); color: var(--danger); }
+.rate-hard { background: var(--warning-bg); color: var(--warning); }
+.rate-good { background: var(--success-bg); color: var(--success); }
+.rate-easy { background: var(--info-bg); color: var(--info); }
+@media (max-width: 520px) { .rating { grid-template-columns: repeat(2, 1fr); } .rate kbd { display: none; } }
+
+/* ---------- Study card: the one expressive element ---------- */
+.study { max-width: var(--card-max); margin: 0 auto; }
+.study-top { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-4); font-size: var(--fs-caption); color: var(--text-muted); }
+.study-top .progress { flex: 1; }
+.card-stage { perspective: 1400px; }
+.card {
+  display: grid; min-height: 340px; border-radius: var(--r-card); transform-style: preserve-3d;
+  transition: transform var(--dur-flip) var(--ease);
+}
+.card[data-flipped="true"] { transform: rotateY(180deg); }
+/* Both faces share one grid cell → card height fits the longer face; long meanings never overflow (GT07). */
+.card-face {
+  grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; background: var(--surface);
+  border: 1px solid var(--divider); border-radius: var(--r-card); padding: var(--sp-6) var(--sp-6) var(--sp-5);
+  display: flex; flex-direction: column;
+}
+.card-back { transform: rotateY(180deg); }
+.card-kind { font-size: var(--fs-caption); color: var(--text-muted); }
+.word { font-size: var(--fs-word); line-height: 1.15; font-weight: 600; letter-spacing: -0.01em; margin-top: var(--sp-5);
+  overflow-wrap: anywhere; hyphens: auto; }
+.ipa-row { display: flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); color: var(--text-muted); font-size: 18px; }
+.card-rule { border: 0; border-top: 1px solid var(--divider); margin: var(--sp-5) 0; }
+.meaning { font-size: var(--fs-meaning); line-height: 1.4; font-weight: 500; overflow-wrap: anywhere; }
+.example { font-size: var(--fs-example); margin-top: var(--sp-3); }
+.example .vi { color: var(--text-muted); font-size: var(--fs-body); margin-top: 2px; }
+.card-foot { margin-top: auto; padding-top: var(--sp-4); font-size: var(--fs-caption); color: var(--text-muted); }
+.study-actions { margin-top: var(--sp-5); }
+@media (max-width: 640px) {
+  .word { font-size: var(--fs-word-mobile); }
+  .card-face { padding: var(--sp-5) var(--sp-4); }
+  .study-actions { position: sticky; bottom: 0; background: var(--bg); padding: var(--sp-3) 0 calc(var(--sp-3) + env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card { transform-style: flat; transition: none; }
+  .card[data-flipped="true"] { transform: none; }
+  .card-back { transform: none; opacity: 0; transition: opacity var(--dur-flip) linear; }
+  .card[data-flipped="true"] .card-back { opacity: 1; }
+  .card[data-flipped="true"] .card-front { opacity: 0; }
+}
+
+/* ---------- Image slot: chỗ chờ ảnh ----------
+   <figure class="img-slot" data-src="…/assets/images/x.webp" data-alt="mô tả cho người đọc màn hình" style="aspect-ratio:4/3">
+     <i data-icon="image"></i><figcaption><b>Tên ảnh</b><span>x.webp · 960×720</span><span>Mô tả nội dung cần vẽ/chụp</span></figcaption>
+   </figure>
+   app.js tải thử data-src: có file → hiện ảnh; chưa có → giữ khung mô tả. FE: <Image> thật, không có khung này. */
+.img-slot { position: relative; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--sp-2); padding: var(--sp-4); text-align: center; overflow: hidden;
+  border: 1.5px dashed var(--control-border); border-radius: var(--r-panel); background: var(--bg); color: var(--text-muted); }
+.img-slot .icon { width: 28px; height: 28px; }
+.img-slot figcaption { display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-caption); max-width: 36ch; }
+.img-slot figcaption b { color: var(--text); font-weight: 600; }
+.img-slot figcaption span:nth-child(2) { font-variant-numeric: tabular-nums; }
+.img-slot > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.img-slot[data-loaded="true"] { border-style: solid; border-color: transparent; padding: 0; }
+.img-slot[data-loaded="true"] > :not(img) { visibility: hidden; }
+
+/* ---------- Segmented control (tab lọc nhỏ: Thư viện, Sổ tay, Thống kê) ---------- */
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--surface); border: 1px solid var(--divider); border-radius: var(--r-control); }
+.seg button { min-height: 36px; padding: 0 var(--sp-3); border: 0; border-radius: 6px; background: none; cursor: pointer; color: var(--text-muted); font-weight: 500;
+  transition: background-color var(--dur-hover) var(--ease), color var(--dur-hover) var(--ease); }
+.seg button:hover { color: var(--text); }
+.seg button[aria-pressed="true"] { background: var(--selected-bg); color: var(--primary); font-weight: 600; }
+@media (max-width: 1023.98px) { .seg button { min-height: var(--tap); } }
+/* ---------- Chip: bộ lọc đang áp dụng, bỏ từng mục ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 6px 0 var(--sp-3); border-radius: 999px;
+  background: var(--selected-bg); color: var(--primary); font-size: var(--fs-caption); font-weight: 500; border: 0; cursor: pointer; }
+.chip .icon { width: 16px; height: 16px; }
+.chip:hover { background: var(--info-bg); text-decoration: underline; }
+/* ---------- Back link ---------- */
+.back-link { display: inline-flex; align-items: center; gap: 4px; min-height: var(--tap); color: var(--primary); text-decoration: none; font-weight: 500; }
+.back-link:hover { text-decoration: underline; }

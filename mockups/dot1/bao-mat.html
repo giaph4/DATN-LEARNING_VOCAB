@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Bảo mật tài khoản — VocabLearning</title>
+  <link rel="icon" href="../shared/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    body[data-state="live"] [data-show-when~="live"] { display: block; }
+    .sec { max-width: 760px; }
+    .sec + .sec { margin-top: var(--sp-6); }
+    .sec-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+    .sec-head h2 { font-size: 18px; }
+    .items { list-style: none; margin: 0; padding: 0; }
+    .item { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4) 0; }
+    .item + .item { border-top: 1px solid var(--divider); }
+    .item-icon { width: 40px; height: 40px; flex: none; border-radius: var(--r-control); display: grid; place-items: center;
+      background: var(--selected-bg); color: var(--primary); }
+    .item-body { flex: 1; min-width: 0; }
+    .item-title { font-weight: 600; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+    .item-meta { color: var(--text-muted); font-size: var(--fs-caption); overflow-wrap: anywhere; }
+    .item .btn { flex: none; }
+    .g { width: 20px; height: 20px; }
+    @media (max-width: 1023.98px) {
+      .item { flex-wrap: wrap; }
+      .item .btn { width: 100%; }
+    }
+  </style>
+</head>
+<!--
+  Bảo mật tài khoản — route /cai-dat/bao-mat — FE F1.6 (tab "Bảo mật" trong Cài đặt) — BE B1.5 (TK-03/TK-05)
+  API: GET /api/v1/auth/sessions → [{id, userAgent, createdAt, lastActiveAt, current}]
+       DELETE /api/v1/auth/sessions/{id} → 204 (404 nếu không phải phiên của mình)
+       POST /api/v1/auth/reauthenticate {password} → 200 {reauthenticatedUntil} (hạn 5 phút) | 401 INVALID_CREDENTIALS | 422 (chưa có mật khẩu)
+       GET /api/v1/auth/identities → {hasPassword, identities:[{provider, email, linkedAt}]}
+       POST /api/v1/auth/identities/google/link → 200 {redirectUrl} | 403 REAUTH_REQUIRED | 503 (Google chưa bật)
+       DELETE /api/v1/auth/identities/google → 204 | 403 REAUTH_REQUIRED | 422 LAST_LOGIN_METHOD
+  Google liên kết xong quay về /cai-dat?lien-ket=google, lỗi → /cai-dat?loi=GOOGLE_ACCOUNT_IN_USE|CONFLICT|GOOGLE_CANCELLED
+  "API thật": đăng nhập trước ở dot1/dang-nhap (cùng trình duyệt)
+-->
+<body data-states="loading error success live" data-state="success" data-nav="cai-dat" data-auth="required">
+<a class="skip-link" href="#main">Bỏ qua điều hướng</a>
+<div class="app">
+  <header class="app-header"></header>
+
+  <nav class="sidebar" aria-label="Điều hướng chính"></nav>
+
+  <main class="main" id="main">
+    <div class="page">
+      <a class="back-link" href="cai-dat"><i data-icon="chevron-left"></i>Cài đặt học</a>
+      <div class="page-head">
+        <div>
+          <h1>Bảo mật</h1>
+          <p class="muted">Cách bạn đăng nhập và các thiết bị đang dùng tài khoản.</p>
+        </div>
+      </div>
+
+      <div class="alert alert-danger sec" id="page-alert" role="alert" hidden style="margin-bottom:var(--sp-5)">
+        <i data-icon="circle-alert"></i>
+        <div><p id="page-alert-text"></p><p class="trace" id="page-alert-trace" hidden>Mã lỗi: <code></code></p></div>
+      </div>
+
+      <div data-show-when="loading" aria-busy="true" aria-label="Đang tải">
+        <div class="skeleton" style="height:180px;border-radius:var(--r-panel);max-width:760px"></div>
+        <div class="skeleton" style="height:240px;border-radius:var(--r-panel);max-width:760px;margin-top:var(--sp-6)"></div>
+      </div>
+
+      <div data-show-when="error">
+        <div class="state">
+          <h3>Bạn cần đăng nhập để xem mục này</h3>
+          <p class="muted">Phiên đăng nhập đã hết hạn hoặc đã bị đăng xuất từ thiết bị khác.</p>
+          <a class="btn btn-primary" href="dang-nhap"><i data-icon="log-in"></i>Đăng nhập</a>
+        </div>
+      </div>
+
+      <div data-show-when="success live">
+        <section class="sec" aria-labelledby="methods-title">
+          <div class="sec-head"><h2 id="methods-title">Phương thức đăng nhập</h2></div>
+          <div class="panel">
+            <ul class="items" id="methods"></ul>
+          </div>
+        </section>
+
+        <section class="sec" aria-labelledby="sessions-title">
+          <div class="sec-head">
+            <h2 id="sessions-title">Thiết bị đang đăng nhập</h2>
+            <button class="btn btn-ghost" type="button" id="revoke-others">Đăng xuất các thiết bị khác</button>
+          </div>
+          <div class="panel">
+            <ul class="items" id="sessions" aria-live="polite"></ul>
+          </div>
+          <p class="caption" style="margin-top:var(--sp-3)">Đổi mật khẩu sẽ đăng xuất mọi thiết bị.</p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Điều hướng chính"></nav>
+</div>
+
+<!-- Xác thực lại: mở khi thao tác nhạy cảm cần (REAUTH_REQUIRED) -->
+<div class="dialog-scrim" id="dlg-reauth" data-open="false">
+  <form class="dialog" role="dialog" aria-modal="true" aria-labelledby="reauth-title" id="reauth-form" novalidate>
+    <h2 id="reauth-title">Nhập lại mật khẩu</h2>
+    <p class="muted" id="reauth-lead">Để bảo vệ tài khoản, hãy xác nhận mật khẩu trước khi thay đổi cách đăng nhập. Xác nhận có hiệu lực 5 phút.</p>
+    <div class="field" data-field="password" style="margin-top:var(--sp-4)">
+      <label for="reauth-password">Mật khẩu hiện tại</label>
+      <input class="input" id="reauth-password" type="password" autocomplete="current-password" maxlength="128" aria-describedby="reauth-error" style="width:100%">
+      <span class="field-error" id="reauth-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn btn-secondary" type="button" data-dialog-close>Hủy</button>
+      <button class="btn btn-primary" type="submit" id="reauth-submit">Xác nhận</button>
+    </div>
+  </form>
+</div>
+
+<!-- Gỡ Google: xác nhận hậu quả -->
+<div class="dialog-scrim" id="dlg-unlink" data-open="false">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="unlink-title">
+    <h2 id="unlink-title">Gỡ liên kết Google?</h2>
+    <p class="muted">Sau khi gỡ, bạn chỉ đăng nhập được bằng email và mật khẩu. Có thể liên kết lại bất cứ lúc nào.</p>
+    <div class="dialog-actions">
+      <button class="btn btn-secondary" type="button" data-dialog-close>Giữ liên kết</button>
+      <button class="btn btn-danger" type="button" id="unlink-confirm">Gỡ liên kết</button>
+    </div>
+  </div>
+</div>
+
+<script src="../shared/demo.js"></script>
+<script src="../shared/app.js"></script>
+<script>
+(() => {
+  const GOOGLE_SVG = '<svg class="g" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.3H12v4.3h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2.1-1.9 3.2-4.8 3.2-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.7c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.8 14.2a6.6 6.6 0 0 1 0-4.3V7.1H2.1a11 11 0 0 0 0 9.9l3.7-2.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7.1l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z"/></svg>';
+  const now = Date.now();
+  const SAMPLE = {
+    methods: { hasPassword: true, identities: [{ provider: 'google', email: 'nguyen.thi.thanh.huong.hoc.tieng.anh@gmail.com', linkedAt: new Date(now - 86400e3 * 12).toISOString() }] },
+    sessions: [
+      { id: '9f2c41d07ab35e18', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36', createdAt: new Date(now - 3600e3 * 5).toISOString(), lastActiveAt: new Date(now - 60e3).toISOString(), current: true },
+      { id: '4b7e02c9d18fa663', userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1', createdAt: new Date(now - 86400e3 * 2).toISOString(), lastActiveAt: new Date(now - 3600e3 * 3).toISOString(), current: false },
+      { id: 'c03a5f8e1d2b7094', userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 Version/17.5 Safari/605.1.15', createdAt: new Date(now - 86400e3 * 9).toISOString(), lastActiveAt: new Date(now - 86400e3 * 6).toISOString(), current: false },
+    ],
+  };
+  let data = structuredClone(SAMPLE);
+  const live = () => document.body.dataset.state === 'live';
+
+  // Nhận diện thiết bị từ User-Agent chỉ để hiển thị (không dùng cho bảo mật)
+  const device = (ua = '') => {
+    const os = /iPhone|iPad/.test(ua) ? 'iPhone/iPad' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows'
+      : /Mac OS X/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : 'Thiết bị khác';
+    const browser = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox'
+      : /Safari\//.test(ua) ? 'Safari' : 'Trình duyệt';
+    return { label: `${browser} trên ${os}`, mobile: /iPhone|Android|Mobile/.test(ua) };
+  };
+  const ago = (iso) => {
+    const m = Math.round((Date.now() - new Date(iso)) / 60000);
+    if (m < 2) return 'vừa xong';
+    if (m < 60) return `${m} phút trước`;
+    if (m < 1440) return `${Math.round(m / 60)} giờ trước`;
+    return `${Math.round(m / 1440)} ngày trước`;
+  };
+  const day = (iso) => new Date(iso).toLocaleDateString('vi-VN');
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  const renderMethods = () => {
+    const google = data.methods.identities.find((i) => i.provider === 'google');
+    const onlyGoogle = !data.methods.hasPassword && google;
+    document.getElementById('methods').innerHTML = `
+      <li class="item">
+        <span class="item-icon"><i data-icon="mail"></i></span>
+        <div class="item-body">
+          <p class="item-title">Email và mật khẩu ${data.methods.hasPassword ? '<span class="badge badge-success">Đã bật</span>' : '<span class="badge">Chưa có mật khẩu</span>'}</p>
+          <p class="item-meta">${data.methods.hasPassword ? 'Đổi mật khẩu sẽ đăng xuất mọi thiết bị.' : 'Tạo mật khẩu để có thêm cách đăng nhập và gỡ được Google.'}</p>
+        </div>
+        <a class="btn btn-secondary" href="quen-mat-khau">${data.methods.hasPassword ? 'Đổi mật khẩu' : 'Tạo mật khẩu'}</a>
+      </li>
+      <li class="item">
+        <span class="item-icon">${GOOGLE_SVG}</span>
+        <div class="item-body">
+          <p class="item-title">Google ${google ? '<span class="badge badge-success">Đã liên kết</span>' : ''}</p>
+          <p class="item-meta">${google ? `${esc(google.email)} · từ ${day(google.linkedAt)}` : 'Đăng nhập nhanh bằng tài khoản Google của bạn.'}</p>
+        </div>
+        ${google
+          ? `<button class="btn btn-secondary" type="button" id="unlink" ${onlyGoogle ? 'disabled aria-describedby="only-google"' : ''}>Gỡ liên kết</button>`
+          : '<button class="btn btn-secondary" type="button" id="link">Liên kết Google</button>'}
+      </li>
+      ${onlyGoogle ? '<li class="item-meta" id="only-google" style="padding-bottom:var(--sp-2)">Google là cách đăng nhập duy nhất. Tạo mật khẩu trước khi gỡ.</li>' : ''}`;
+    VL.renderIcons(document.getElementById('methods'));
+  };
+
+  const renderSessions = () => {
+    document.getElementById('sessions').innerHTML = data.sessions.map((s) => {
+      const d = device(s.userAgent);
+      return `<li class="item">
+        <span class="item-icon"><i data-icon="${d.mobile ? 'smartphone' : 'monitor'}"></i></span>
+        <div class="item-body">
+          <p class="item-title">${esc(d.label)} ${s.current ? '<span class="badge badge-info">Thiết bị này</span>' : ''}</p>
+          <p class="item-meta">Hoạt động ${ago(s.lastActiveAt)} · đăng nhập ${day(s.createdAt)}</p>
+        </div>
+        <button class="btn ${s.current ? 'btn-ghost' : 'btn-secondary'}" type="button" data-revoke="${s.id}" data-current="${s.current}">${s.current ? 'Đăng xuất' : 'Đăng xuất thiết bị'}</button>
+      </li>`;
+    }).join('');
+    document.getElementById('revoke-others').hidden = !data.sessions.some((s) => !s.current);
+    VL.renderIcons(document.getElementById('sessions'));
+  };
+
+  const showAlert = (text, traceId) => {
+    document.getElementById('page-alert').hidden = !text;
+    document.getElementById('page-alert-text').textContent = text || '';
+    const t = document.getElementById('page-alert-trace');
+    t.hidden = !traceId; t.querySelector('code').textContent = traceId || '';
+  };
+
+  const load = async () => {
+    if (!live()) { data = structuredClone(SAMPLE); renderMethods(); renderSessions(); return; }
+    try {
+      const [methods, sessions] = await Promise.all([VL.api('/auth/identities'), VL.api('/auth/sessions')]);
+      data = { methods, sessions }; renderMethods(); renderSessions();
+    } catch (e) {
+      if (e.status === 401) document.body.dataset.state = 'error';
+      else showAlert('Chưa tải được thông tin bảo mật. Thử lại sau ít phút.', e.traceId);
+    }
+  };
+
+  // Thao tác cần xác thực lại: thử gọi, gặp REAUTH_REQUIRED thì hỏi mật khẩu rồi gọi lại đúng thao tác đó
+  let pending = null;
+  const withReauth = async (action) => {
+    try { await action(); }
+    catch (e) {
+      if (e.code !== 'REAUTH_REQUIRED') throw e;
+      pending = action; document.getElementById('reauth-form').reset(); setReauthError(null);
+      VL.openDialog('dlg-reauth'); document.getElementById('reauth-password').focus();
+    }
+  };
+  const setReauthError = (msg) => {
+    const f = document.querySelector('#reauth-form [data-field]');
+    f.toggleAttribute('data-invalid', !!msg);
+    document.getElementById('reauth-password').setAttribute('aria-invalid', msg ? 'true' : 'false');
+    const err = document.getElementById('reauth-error');
+    err.hidden = !msg; err.querySelector('span').textContent = msg || '';
+  };
+  const closeDialog = (id) => document.querySelector(`#${id} [data-dialog-close]`).click();
+
+  document.getElementById('reauth-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const password = document.getElementById('reauth-password').value;
+    if (!password) return setReauthError('Vui lòng nhập mật khẩu.');
+    const btn = document.getElementById('reauth-submit'); btn.disabled = true;
+    try {
+      if (live()) await VL.send('POST', '/auth/reauthenticate', { password });
+      closeDialog('dlg-reauth');
+      const action = pending; pending = null; await action?.();
+    } catch (e) {
+      if (e.code === 'INVALID_CREDENTIALS') setReauthError('Mật khẩu không đúng.');
+      else if (e.code === 'RATE_LIMITED') setReauthError('Bạn đã thử quá nhiều lần. Đợi một phút rồi thử lại.');
+      else setReauthError(e.detail || 'Chưa xác nhận được. Thử lại sau ít phút.');
+    } finally { btn.disabled = false; }
+  });
+
+  const linkGoogle = async () => {
+    if (!live()) { VL.toast('Ứng dụng thật chuyển sang Google, xong quay về /cai-dat?lien-ket=google'); return; }
+    const { body } = await VL.send('POST', '/auth/identities/google/link');
+    location.href = VL.demo ? body.redirectUrl : VL.API_BASE.replace(/\/api\/v1$/, '') + body.redirectUrl; // điều hướng cả trang
+  };
+  const unlinkGoogle = async () => {
+    if (live()) await VL.send('DELETE', '/auth/identities/google');
+    data.methods.identities = data.methods.identities.filter((i) => i.provider !== 'google');
+    renderMethods(); VL.toast('Đã gỡ liên kết Google');
+  };
+
+  document.addEventListener('click', async (ev) => {
+    const t = ev.target.closest('button'); if (!t) return;
+    try {
+      if (t.id === 'link') await withReauth(linkGoogle);
+      if (t.id === 'unlink') VL.openDialog('dlg-unlink');
+      if (t.id === 'unlink-confirm') { closeDialog('dlg-unlink'); await withReauth(unlinkGoogle); }
+      if (t.dataset.revoke) {
+        t.disabled = true;
+        if (live()) await VL.send('DELETE', `/auth/sessions/${t.dataset.revoke}`);
+        if (t.dataset.current === 'true') { location.href = 'dang-nhap'; return; }
+        data.sessions = data.sessions.filter((s) => s.id !== t.dataset.revoke);
+        renderSessions(); VL.toast('Đã đăng xuất thiết bị');
+      }
+      if (t.id === 'revoke-others') {
+        t.disabled = true;
+        for (const s of data.sessions.filter((x) => !x.current)) if (live()) await VL.send('DELETE', `/auth/sessions/${s.id}`);
+        data.sessions = data.sessions.filter((s) => s.current);
+        renderSessions(); t.disabled = false; VL.toast('Đã đăng xuất các thiết bị khác');
+      }
+    } catch (e) {
+      t.disabled = false;
+      const map = {
+        LAST_LOGIN_METHOD: 'Google là cách đăng nhập duy nhất. Tạo mật khẩu trước khi gỡ.',
+        DEPENDENCY_UNAVAILABLE: 'Đăng nhập Google chưa được bật trên máy chủ.',
+        NOT_FOUND: 'Thiết bị này đã đăng xuất trước đó.',
+        UNAUTHENTICATED: 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.',
+      };
+      showAlert(map[e.code] || e.detail || 'Chưa thực hiện được. Thử lại sau ít phút.', map[e.code] ? null : e.traceId);
+      if (e.code === 'NOT_FOUND') load();
+    }
+  });
+
+  // Kết quả quay về từ Google
+  const params = new URLSearchParams(location.search);
+  if (params.get('lien-ket') === 'google') VL.toast('Đã liên kết Google');
+  const LINK_ERRORS = {
+    GOOGLE_ACCOUNT_IN_USE: 'Tài khoản Google này đã liên kết với một người dùng khác.',
+    CONFLICT: 'Tài khoản đã liên kết một Google khác. Hãy gỡ liên kết cũ trước.',
+    GOOGLE_CANCELLED: 'Bạn đã hủy liên kết Google.',
+    GOOGLE_FAILED: 'Chưa liên kết được Google. Thử lại sau ít phút.',
+  };
+  if (params.get('loi')) showAlert(LINK_ERRORS[params.get('loi')] || 'Chưa liên kết được Google.');
+
+  document.addEventListener('mock:state', ({ detail: s }) => { showAlert(null); if (s === 'success' || s === 'live') load(); });
+  load();
+})();
+</script>
+</body>
+</html>

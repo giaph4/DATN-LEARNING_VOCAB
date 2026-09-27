@@ -1,0 +1,9 @@
+# Build output and dependencies — keep the graph small and cheap
+target/
+backend/target/
+backend/.mvn/
+frontend/node_modules/
+frontend/.next/
+.idea/
+graphify-out/
+*.docx

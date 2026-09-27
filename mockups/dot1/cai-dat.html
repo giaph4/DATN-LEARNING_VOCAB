@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Thiết lập học — VocabLearning</title>
+  <link rel="icon" href="../shared/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    body[data-state="live"] [data-show-when~="live"] { display: block; }
+    .sec { max-width: 760px; }
+    .steps { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-5); max-width: 760px; }
+    .steps span { flex: 1; height: 4px; border-radius: 2px; background: var(--divider); }
+    .steps span[data-done="true"] { background: var(--primary); }
+    .step-label { color: var(--text-muted); font-size: var(--fs-caption); margin-bottom: var(--sp-2); }
+    .step + .step { margin-top: var(--sp-6); }
+    .step h2 { font-size: 18px; margin-bottom: var(--sp-1); }
+    .step > .muted { margin-bottom: var(--sp-4); }
+    form[data-mode="wizard"] .step[data-active="false"] { display: none; }
+    form[data-mode="edit"] .wizard-only { display: none; }
+    form[data-mode="wizard"] .edit-only { display: none; }
+    .levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); border: 0; margin: 0; padding: 0; }
+    .level { position: relative; display: block; padding: var(--sp-4); border: 1.5px solid var(--control-border); border-radius: var(--r-control);
+      cursor: pointer; min-height: var(--tap); background: var(--surface); }
+    .level input { position: absolute; opacity: 0; pointer-events: none; }
+    .level b { display: block; font-size: 18px; }
+    .level small { color: var(--text-muted); }
+    .level:has(input:checked) { border-color: var(--primary); background: var(--selected-bg); }
+    .level:has(input:focus-visible) { outline: 2px solid var(--focus, var(--primary)); outline-offset: 2px; }
+    .topics { border: 0; margin: 0; padding: 0; }
+    .topic-group + .topic-group { border-top: 1px solid var(--divider); }
+    .topic-group { padding: var(--sp-2) 0; }
+    .topic-children { padding-left: var(--sp-6); display: flex; flex-wrap: wrap; column-gap: var(--sp-5); }
+    .topic-meta { color: var(--text-muted); font-size: var(--fs-caption); }
+    .count { font-size: var(--fs-caption); color: var(--text-muted); align-self: flex-end; }
+    .actions { display: flex; gap: var(--sp-3); margin-top: var(--sp-6); max-width: 760px; flex-wrap: wrap; }
+    .actions .spacer { flex: 1; }
+    @media (max-width: 1023.98px) {
+      .levels { grid-template-columns: repeat(2, 1fr); }
+      .actions .btn { flex: 1; }
+      .actions .spacer { display: none; }
+    }
+  </style>
+</head>
+<!--
+  Thiết lập học — route /cai-dat — FE F1.6 (UI06) — BE B1.7 (TK-07); bước kế hoạch/giờ nhắc thêm ở B1.8
+  API: GET /api/v1/users/me → {level, learningGoal?, interests:[{id,slug,name}], onboardingCompletedAt?}
+       GET /api/v1/topics → cây [{id, slug, name, description, children[]}] (khách gọi được)
+       PATCH /api/v1/users/me/profile {level?, learningGoal?, completeOnboarding?} → như GET /users/me
+         400 fieldErrors level (ngoài A1–C2) | learningGoal (>500)
+       PUT /api/v1/users/me/interests {topicIds:["2","8"]} → {topics:[{id,slug,name}]} — thay toàn bộ; [] = bỏ hết
+         422 fieldErrors topicIds (chủ đề đã bị ẩn/không tồn tại) | 400 (quá 20 chủ đề)
+  Chưa xong thiết lập (không có onboardingCompletedAt) → chạy theo bước; đã xong → một trang sửa.
+  "API thật": đăng nhập trước ở dot1/dang-nhap (cùng trình duyệt).
+-->
+<body data-states="loading error success live" data-state="success" data-nav="cai-dat" data-auth="required">
+<a class="skip-link" href="#main">Bỏ qua điều hướng</a>
+<div class="app">
+  <header class="app-header"></header>
+
+  <nav class="sidebar" aria-label="Điều hướng chính"></nav>
+
+  <main class="main" id="main">
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <h1 id="title">Thiết lập việc học</h1>
+          <p class="muted" id="lead">Trả lời hai câu hỏi để hệ thống gợi ý bộ thẻ phù hợp. Bạn đổi lại được bất cứ lúc nào.</p>
+        </div>
+        <a class="btn btn-ghost" href="bao-mat" id="security-link" hidden>Bảo mật</a>
+      </div>
+
+      <div class="alert alert-danger sec" id="page-alert" role="alert" hidden style="margin-bottom:var(--sp-5)">
+        <i data-icon="circle-alert"></i>
+        <div><p id="page-alert-text"></p><p class="trace" id="page-alert-trace" hidden>Mã lỗi: <code></code></p></div>
+      </div>
+
+      <div data-show-when="loading" aria-busy="true" aria-label="Đang tải">
+        <div class="skeleton" style="height:320px;border-radius:var(--r-panel);max-width:760px"></div>
+      </div>
+
+      <div data-show-when="error">
+        <div class="state">
+          <h3>Bạn cần đăng nhập để thiết lập việc học</h3>
+          <p class="muted">Phiên đăng nhập đã hết hạn hoặc đã bị đăng xuất từ thiết bị khác.</p>
+          <a class="btn btn-primary" href="dang-nhap"><i data-icon="log-in"></i>Đăng nhập</a>
+        </div>
+      </div>
+
+      <div data-show-when="success live">
+        <form id="setup" data-mode="wizard" novalidate>
+          <div class="steps wizard-only" aria-hidden="true"><span data-done="true"></span><span></span></div>
+
+          <section class="step panel sec" data-step="1" data-active="true" aria-labelledby="level-title">
+            <p class="step-label wizard-only">Bước 1/2</p>
+            <h2 id="level-title">Trình độ tiếng Anh hiện tại</h2>
+            <p class="muted">Đây là trình độ bạn <b>tự đánh giá</b> theo khung CEFR, chỉ dùng để gợi ý bộ thẻ.</p>
+            <fieldset class="levels" id="levels" aria-describedby="level-error">
+              <legend class="visually-hidden" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Chọn trình độ</legend>
+            </fieldset>
+            <span class="field-error" id="level-error" hidden style="margin-top:var(--sp-2)"><i data-icon="circle-alert"></i><span></span></span>
+          </section>
+
+          <section class="step panel sec" data-step="2" data-active="false" aria-labelledby="goal-title">
+            <p class="step-label wizard-only">Bước 2/2</p>
+            <h2 id="goal-title">Mục tiêu và chủ đề quan tâm</h2>
+            <p class="muted">Chọn những chủ đề bạn muốn học trước. Không chọn cũng được.</p>
+            <div class="field" data-field="learningGoal">
+              <label for="learningGoal">Mục tiêu học <span class="optional">(không bắt buộc)</span></label>
+              <textarea class="textarea" id="learningGoal" maxlength="500" aria-describedby="learningGoal-error learningGoal-count"
+                placeholder="Ví dụ: Đọc hiểu tài liệu kỹ thuật tiếng Anh không cần từ điển."></textarea>
+              <span class="count" id="learningGoal-count"></span>
+              <span class="field-error" id="learningGoal-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+            </div>
+            <fieldset class="topics field" data-field="topicIds" style="margin-top:var(--sp-5)" aria-describedby="topicIds-error topics-count">
+              <legend class="label" style="font-weight:500;margin-bottom:var(--sp-2)">Chủ đề quan tâm <span class="topic-meta" id="topics-count"></span></legend>
+              <div id="topics" aria-live="polite"></div>
+              <span class="field-error" id="topicIds-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+            </fieldset>
+          </section>
+
+          <div class="actions">
+            <button class="btn btn-secondary wizard-only" type="button" id="back" hidden>Quay lại</button>
+            <span class="spacer"></span>
+            <button class="btn btn-primary" type="submit" id="submit">Tiếp tục</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Điều hướng chính"></nav>
+</div>
+
+<script src="../shared/demo.js"></script>
+<script src="../shared/app.js"></script>
+<script>
+(() => {
+  const LEVELS = [
+    ['A1', 'Mới bắt đầu'], ['A2', 'Sơ cấp'], ['B1', 'Trung cấp'],
+    ['B2', 'Trung cao cấp'], ['C1', 'Cao cấp'], ['C2', 'Thành thạo'],
+  ];
+  const MAX_TOPICS = 20;
+  const SAMPLE_TOPICS = [
+    { id: '7', slug: 'am-thuc', name: 'Ẩm thực', children: [] },
+    { id: '4', slug: 'cong-nghe', name: 'Công nghệ', children: [{ id: '9', slug: 'lap-trinh', name: 'Lập trình', children: [] }] },
+    { id: '5', slug: 'cong-viec', name: 'Công việc', children: [] },
+    { id: '2', slug: 'du-lich', name: 'Du lịch', children: [{ id: '8', slug: 'san-bay', name: 'Sân bay', children: [] }] },
+    { id: '1', slug: 'giao-tiep', name: 'Giao tiếp hằng ngày', children: [] },
+    { id: '6', slug: 'hoc-thuat', name: 'Học thuật và nghiên cứu khoa học liên ngành cho người chuẩn bị du học bậc sau đại học', children: [] },
+    { id: '3', slug: 'suc-khoe', name: 'Sức khỏe', children: [] },
+  ];
+  const SAMPLE_ME = { level: 'A1', interests: [] };
+  let me = structuredClone(SAMPLE_ME);
+  let tree = SAMPLE_TOPICS;
+  let step = 1;
+  const live = () => document.body.dataset.state === 'live';
+  const $ = (id) => document.getElementById(id);
+  const form = $('setup');
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  const renderLevels = () => {
+    $('levels').querySelectorAll('.level').forEach((n) => n.remove());
+    $('levels').insertAdjacentHTML('beforeend', LEVELS.map(([code, label]) => `
+      <label class="level"><input type="radio" name="level" value="${code}" ${me.level === code ? 'checked' : ''}>
+        <b>${code}</b><small>${label}</small></label>`).join(''));
+  };
+  const renderTopics = () => {
+    const chosen = new Set(me.interests.map((t) => t.id));
+    const box = (t) => `<label class="check"><input type="checkbox" name="topic" value="${t.id}" ${chosen.has(t.id) ? 'checked' : ''}><span>${esc(t.name)}</span></label>`;
+    $('topics').innerHTML = tree.map((t) => `<div class="topic-group">${box(t)}${t.children.length
+      ? `<div class="topic-children">${t.children.map(box).join('')}</div>` : ''}</div>`).join('');
+    updateTopicCount();
+  };
+  const selectedTopics = () => [...form.querySelectorAll('input[name="topic"]:checked')].map((i) => i.value);
+  const updateTopicCount = () => {
+    const n = selectedTopics().length;
+    $('topics-count').textContent = n ? `— đã chọn ${n}/${MAX_TOPICS}` : '';
+    form.querySelectorAll('input[name="topic"]:not(:checked)').forEach((i) => { i.disabled = n >= MAX_TOPICS; });
+  };
+  const counter = () => { $('learningGoal-count').textContent = `${$('learningGoal').value.length}/500`; };
+
+  const render = () => {
+    const done = !!me.onboardingCompletedAt;
+    form.dataset.mode = done ? 'edit' : 'wizard';
+    $('title').textContent = done ? 'Cài đặt học' : 'Thiết lập việc học';
+    $('lead').textContent = done ? 'Trình độ, mục tiêu và chủ đề dùng để gợi ý bộ thẻ cho bạn.'
+      : 'Trả lời hai câu hỏi để hệ thống gợi ý bộ thẻ phù hợp. Bạn đổi lại được bất cứ lúc nào.';
+    $('security-link').hidden = !done;
+    $('learningGoal').value = me.learningGoal || ''; counter();
+    renderLevels(); renderTopics(); goTo(done ? 0 : 1);
+  };
+  const goTo = (n) => {
+    step = n;
+    form.querySelectorAll('.step').forEach((s) => { s.dataset.active = String(n === 0 || +s.dataset.step === n); });
+    form.querySelectorAll('.steps span').forEach((s, i) => { s.dataset.done = String(i < n); });
+    $('back').hidden = n !== 2;
+    $('submit').textContent = n === 1 ? 'Tiếp tục' : n === 2 ? 'Hoàn tất thiết lập' : 'Lưu cài đặt';
+  };
+
+  const setFieldError = (field, msg) => {
+    const f = form.querySelector(`[data-field="${field}"]`);
+    if (f) { if (msg) f.setAttribute('data-invalid', 'true'); else f.removeAttribute('data-invalid'); }
+    const err = $(`${field}-error`); if (!err) return;
+    err.hidden = !msg; err.querySelector('span').textContent = msg || '';
+  };
+  const clearErrors = () => ['level', 'learningGoal', 'topicIds'].forEach((f) => setFieldError(f, null));
+  const showAlert = (text, traceId) => {
+    $('page-alert').hidden = !text; $('page-alert-text').textContent = text || '';
+    const t = $('page-alert-trace'); t.hidden = !traceId; t.querySelector('code').textContent = traceId || '';
+  };
+
+  const load = async () => {
+    if (!live()) { me = structuredClone(SAMPLE_ME); tree = SAMPLE_TOPICS; render(); return; }
+    try {
+      [me, tree] = await Promise.all([VL.api('/users/me'), VL.api('/topics')]);
+      render();
+    } catch (e) {
+      if (e.status === 401) document.body.dataset.state = 'error';
+      else showAlert('Chưa tải được cài đặt. Thử lại sau ít phút.', e.traceId);
+    }
+  };
+
+  const saveLevel = async () => {
+    const level = form.querySelector('input[name="level"]:checked')?.value;
+    if (!level) throw { fieldErrors: [{ field: 'level', message: 'Hãy chọn một trình độ.' }] };
+    if (live()) me = (await VL.send('PATCH', '/users/me/profile', { level })).body; else me.level = level;
+  };
+  // Chủ đề ghi trước, mốc "xong thiết lập" ghi sau cùng: lỗi giữa chừng không đánh dấu hoàn tất
+  const saveGoalAndTopics = async (complete) => {
+    const topicIds = selectedTopics();
+    const learningGoal = $('learningGoal').value.trim();
+    if (live()) {
+      const interests = (await VL.send('PUT', '/users/me/interests', { topicIds })).body.topics;
+      me = (await VL.send('PATCH', '/users/me/profile', { learningGoal, ...(complete && { completeOnboarding: true }) })).body;
+      me.interests = interests;
+    } else {
+      me = { ...me, learningGoal: learningGoal || undefined, interests: topicIds.map((id) => ({ id })) };
+      if (complete) me.onboardingCompletedAt = new Date().toISOString();
+    }
+  };
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault(); clearErrors(); showAlert(null);
+    const btn = $('submit'); btn.disabled = true;
+    try {
+      if (step === 1) { await saveLevel(); goTo(2); $('goal-title').focus?.(); }
+      else if (step === 2) {
+        await saveGoalAndTopics(true);
+        if (VL.demo) { location.href = `${VL.demo.link('dot2/hoc')}?chao-mung=1`; return; } // demo: vào trang học
+        render(); VL.toast('Đã hoàn tất thiết lập');
+      }
+      else { await saveLevel(); await saveGoalAndTopics(false); render(); VL.toast('Đã lưu cài đặt'); }
+    } catch (e) {
+      (e.fieldErrors || []).forEach((f) => setFieldError(f.field, f.message));
+      if (e.code === 'BUSINESS_RULE_VIOLATED' && live()) { tree = await VL.api('/topics').catch(() => tree); renderTopics(); }
+      if (!e.fieldErrors?.length) {
+        showAlert(e.code === 'UNAUTHENTICATED' ? 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.'
+          : e.detail || 'Chưa lưu được. Thử lại sau ít phút.', e.code ? null : e.traceId);
+      }
+    } finally { btn.disabled = false; }
+  });
+  $('back').addEventListener('click', () => { clearErrors(); goTo(1); });
+  $('learningGoal').addEventListener('input', () => { counter(); setFieldError('learningGoal', null); });
+  form.addEventListener('change', (ev) => {
+    if (ev.target.name === 'topic') { updateTopicCount(); setFieldError('topicIds', null); }
+    if (ev.target.name === 'level') setFieldError('level', null);
+  });
+
+  document.addEventListener('mock:state', ({ detail: s }) => { showAlert(null); if (s === 'success' || s === 'live') load(); });
+  load();
+})();
+</script>
+</body>
+</html>

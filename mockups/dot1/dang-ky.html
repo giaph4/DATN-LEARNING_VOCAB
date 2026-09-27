@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Đăng ký — VocabLearning</title>
+  <link rel="icon" href="../shared/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    body[data-state="live"] [data-show-when~="live"] { display: block; }
+    .auth-card h1 { font-size: var(--fs-page); line-height: var(--lh-tight); }
+    .auth-card .lead { color: var(--text-muted); margin-top: var(--sp-2); }
+    .auth-card > .alert { margin-top: var(--sp-5); }
+    .form { display: flex; flex-direction: column; gap: var(--sp-4); margin-top: var(--sp-5); }
+    .input { width: 100%; min-width: 0; }
+    .pw { position: relative; }
+    .pw .input { padding-right: 52px; }
+    .pw .btn-icon { position: absolute; right: 0; top: 0; color: var(--text-muted); }
+    .check { align-items: flex-start; min-height: var(--tap); }
+    .check input { margin-top: 2px; flex: none; }
+    .form .btn-primary { width: 100%; }
+    .auth-foot { margin-top: var(--sp-5); text-align: center; color: var(--text-muted); }
+    body[data-state="success"] .sent { display: flex; flex-direction: column; gap: var(--sp-4); }
+    .sent .mail-icon { width: 48px; height: 48px; border-radius: var(--r-panel); background: var(--selected-bg); color: var(--primary); display: grid; place-items: center; }
+    .sent .email { font-weight: 600; overflow-wrap: anywhere; }
+    .sent ol { margin: 0; padding-left: var(--sp-5); color: var(--text-muted); }
+    .sent ol li + li { margin-top: var(--sp-1); }
+    .auth-aside .auth-hero { max-width: 360px; width: 100%; margin-bottom: auto; background: transparent;
+      border-color: var(--on-primary-divider); color: var(--on-primary); }
+    .auth-aside .auth-hero figcaption b { color: var(--on-primary); }
+  </style>
+</head>
+<!--
+  UI01 Đăng ký — route /dang-ky — FE F1.1 — BE B1.1 (TK-01)
+  API: GET /api/v1/auth/csrf, POST /api/v1/auth/register → 202 {message}; 400 VALIDATION_FAILED (fieldErrors); 429 RATE_LIMITED; 500 INTERNAL_ERROR (traceId)
+  Trạng thái "API thật" gửi thật tới BE (email trùng vẫn 202 nên chạy lại an toàn); email xác thực xem ở Mailpit http://localhost:8025
+-->
+<body data-states="loading empty error success live" data-state="live">
+<main class="auth" id="main">
+  <aside class="auth-aside" aria-label="Giới thiệu VocabLearning">
+    <a class="brand" href="trang-chu"><img class="brand-mark" src="../shared/assets/logo-mark-inverse.svg" alt="" width="28" height="28"><span>Vocab<span class="brand-accent">Learning</span></span></a>
+    <h2>Mỗi ngày 15 phút, nhớ từ lâu hơn.</h2>
+    <ul>
+      <li><i data-icon="check"></i><span>Ôn đúng lúc sắp quên nhờ lịch lặp lại ngắt quãng.</span></li>
+      <li><i data-icon="check"></i><span>Bộ từ giao tiếp và TOEIC có sẵn, hoặc tự soạn thẻ của bạn.</span></li>
+      <li><i data-icon="check"></i><span>Tiến độ lưu trên mọi thiết bị.</span></li>
+    </ul>
+    <figure class="img-slot auth-hero" data-src="../shared/assets/images/auth-hero.png" data-alt="" style="aspect-ratio:4/3">
+      <i data-icon="image"></i>
+      <figcaption><b>Minh họa trang đăng ký</b><span>auth-hero.webp · 960×720 · WebP/PNG nền trong</span>
+        <span>Một người học trẻ cầm điện thoại, quanh là vài thẻ từ tiếng Anh bay nhẹ (“travel”, “boarding pass”); nét phẳng, màu trắng + xanh dương nhạt + chấm cam; hợp nền xanh đậm.</span></figcaption>
+    </figure>
+  </aside>
+
+  <div class="auth-main">
+  <div class="auth-form">
+  <a class="brand" href="trang-chu"><img class="brand-mark" src="../shared/assets/logo-mark.svg" alt="" width="28" height="28"><span>Vocab<span class="brand-accent">Learning</span></span></a>
+
+  <section class="auth-card" data-show-when="loading empty error live" aria-labelledby="title">
+    <h1 id="title">Tạo tài khoản</h1>
+    <p class="lead">Học từ vựng tiếng Anh mỗi ngày, lưu tiến độ trên mọi thiết bị.</p>
+
+    <div class="alert alert-danger" id="form-alert" role="alert" hidden>
+      <i data-icon="circle-alert"></i>
+      <div><p id="form-alert-text"></p><p class="trace" id="form-alert-trace" hidden>Mã lỗi: <code></code></p></div>
+    </div>
+
+    <form class="form" id="register" novalidate>
+      <div class="field" data-field="email">
+        <label for="email">Email</label>
+        <input class="input" id="email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required aria-describedby="email-error">
+        <span class="field-error" id="email-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+      </div>
+
+      <div class="field" data-field="displayName">
+        <label for="displayName">Tên hiển thị</label>
+        <input class="input" id="displayName" name="displayName" autocomplete="nickname" maxlength="100" required aria-describedby="displayName-hint displayName-error">
+        <span class="hint" id="displayName-hint">Từ 2 đến 100 ký tự, hiện trên hồ sơ của bạn.</span>
+        <span class="field-error" id="displayName-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+      </div>
+
+      <div class="field" data-field="password">
+        <label for="password">Mật khẩu</label>
+        <div class="pw">
+          <input class="input" id="password" name="password" type="password" autocomplete="new-password" maxlength="128" required aria-describedby="password-hint password-error">
+          <button class="btn btn-ghost btn-icon" type="button" data-toggle-pw="password" aria-label="Hiện mật khẩu" aria-pressed="false"><i data-icon="eye"></i></button>
+        </div>
+        <span class="hint" id="password-hint">Ít nhất 10 ký tự. Nên dùng một cụm từ dễ nhớ.</span>
+        <span class="field-error" id="password-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+      </div>
+
+      <div class="field" data-field="confirm">
+        <label for="confirm">Nhập lại mật khẩu</label>
+        <input class="input" id="confirm" name="confirm" type="password" autocomplete="new-password" maxlength="128" required aria-describedby="confirm-error">
+        <span class="field-error" id="confirm-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+      </div>
+
+      <div class="field" data-field="terms">
+        <label class="check"><input type="checkbox" id="terms" name="terms" aria-describedby="terms-error">
+          <span>Tôi đồng ý với <a href="dieu-khoan#dieu-khoan" target="_blank" rel="noopener">Điều khoản sử dụng</a> và <a href="dieu-khoan#quyen-rieng-tu" target="_blank" rel="noopener">Chính sách quyền riêng tư</a>.</span></label>
+        <span class="field-error" id="terms-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+      </div>
+
+      <button class="btn btn-primary btn-lg" type="submit" id="submit">Tạo tài khoản</button>
+    </form>
+
+    <p class="auth-foot">Đã có tài khoản? <a href="dang-nhap">Đăng nhập</a></p>
+  </section>
+
+  <section class="auth-card sent" data-show-when="success" aria-labelledby="sent-title" tabindex="-1" id="sent">
+    <span class="mail-icon"><i data-icon="mail"></i></span>
+    <h1 id="sent-title">Kiểm tra hộp thư của bạn</h1>
+    <p id="sent-message">Nếu email hợp lệ, hãy kiểm tra hộp thư để xác thực tài khoản.</p>
+    <p>Email đã nhập: <span class="email" id="sent-email">nguyen.thi.thanh.huong.hoc.tieng.anh.moi.ngay@truong-dai-hoc-ngoai-ngu.edu.vn</span></p>
+    <ol>
+      <li>Mở email từ VocabLearning và nhấn liên kết xác thực.</li>
+      <li>Liên kết có hiệu lực trong 24 giờ.</li>
+      <li>Không thấy email? Xem thư mục Spam hoặc Quảng cáo.</li>
+    </ol>
+    <a class="btn btn-secondary" href="dang-nhap">Đến trang đăng nhập</a>
+  </section>
+  </div>
+  </div>
+</main>
+
+<script src="../shared/demo.js"></script>
+<script src="../shared/app.js"></script>
+<script>
+(() => {
+  const form = document.getElementById('register');
+  const submit = document.getElementById('submit');
+  const alertBox = document.getElementById('form-alert');
+  const LONG_NAME = 'Nguyễn Thị Thanh Hương — lớp tiếng Anh giao tiếp buổi tối, chi nhánh Quận Bình Thạnh, TP. Hồ Chí Minh';
+
+  // Giới hạn trùng với RegisterRequest (BE): email ≤254, mật khẩu 10–128, tên 2–100
+  const validate = (v) => {
+    const e = {};
+    if (!v.email) e.email = 'Vui lòng nhập email.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email)) e.email = 'Email không đúng định dạng.';
+    if (!v.displayName) e.displayName = 'Vui lòng nhập tên hiển thị.';
+    else if (v.displayName.length < 2 || v.displayName.length > 100) e.displayName = 'Tên hiển thị phải từ 2 đến 100 ký tự.';
+    if (!v.password) e.password = 'Vui lòng nhập mật khẩu.';
+    else if (v.password.length < 10 || v.password.length > 128) e.password = 'Mật khẩu phải từ 10 đến 128 ký tự.';
+    if (v.confirm !== v.password) e.confirm = 'Mật khẩu nhập lại chưa khớp.';
+    if (!v.terms) e.terms = 'Bạn cần đồng ý điều khoản để tạo tài khoản.';
+    return e;
+  };
+
+  const values = () => ({
+    email: form.email.value.trim(), displayName: form.displayName.value.trim(),
+    password: form.password.value, confirm: form.confirm.value, terms: form.terms.checked,
+  });
+
+  const setFieldErrors = (errors) => {
+    form.querySelectorAll('[data-field]').forEach((f) => {
+      const msg = errors[f.dataset.field];
+      const err = f.querySelector('.field-error');
+      const input = f.querySelector('input');
+      f.toggleAttribute('data-invalid', !!msg); if (msg) f.dataset.invalid = 'true';
+      input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+      err.hidden = !msg; err.querySelector('span').textContent = msg || '';
+    });
+    const first = form.querySelector('[data-invalid] input');
+    first?.focus();
+  };
+
+  const showAlert = (text, traceId) => {
+    alertBox.hidden = !text;
+    document.getElementById('form-alert-text').textContent = text || '';
+    const t = document.getElementById('form-alert-trace');
+    t.hidden = !traceId; t.querySelector('code').textContent = traceId || '';
+  };
+
+  const setBusy = (busy) => {
+    submit.setAttribute('aria-busy', busy); submit.disabled = busy;
+    form.querySelectorAll('input').forEach((i) => (i.readOnly = busy));
+  };
+
+  // 429: đếm ngược trên nút, lấy số giây trong detail của BE
+  let timer;
+  const countdown = (detail) => {
+    let s = +(detail?.match(/(\d+)\s*giây/)?.[1] || 60);
+    clearInterval(timer); submit.disabled = true;
+    const tick = () => {
+      if (s <= 0) { clearInterval(timer); submit.disabled = false; submit.textContent = 'Tạo tài khoản'; return; }
+      submit.textContent = `Thử lại sau ${s} giây`; s -= 1;
+    };
+    tick(); timer = setInterval(tick, 1000);
+  };
+
+  const showSent = (email, message) => {
+    document.getElementById('sent-email').textContent = email;
+    if (message) document.getElementById('sent-message').textContent = message;
+    document.body.dataset.state = 'success';
+    document.getElementById('sent').focus();
+  };
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const v = values();
+    const errors = validate(v);
+    setFieldErrors(errors); showAlert(null);
+    if (Object.keys(errors).length) return;
+    if (document.body.dataset.state !== 'live') { showSent(v.email); return; }
+
+    setBusy(true);
+    try {
+      const { body } = await VL.send('POST', '/auth/register', { email: v.email, password: v.password, displayName: v.displayName });
+      showSent(v.email, body?.message);
+    } catch (e) {
+      if (e.code === 'VALIDATION_FAILED') {
+        const byField = {};
+        (e.fieldErrors || []).forEach((f) => { byField[f.field] ??= f.message; });
+        setFieldErrors(byField);
+      } else if (e.code === 'RATE_LIMITED') {
+        showAlert('Bạn đã thử đăng ký quá nhiều lần. Vui lòng đợi rồi thử lại.');
+        countdown(e.detail);
+      } else {
+        showAlert('Chưa tạo được tài khoản. Kiểm tra kết nối rồi thử lại sau ít phút.', e.traceId);
+      }
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  document.querySelectorAll('[data-toggle-pw]').forEach((b) => b.addEventListener('click', () => {
+    const input = document.getElementById(b.dataset.togglePw);
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    b.setAttribute('aria-pressed', show);
+    b.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+    b.querySelector('svg').outerHTML = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${show
+      ? '<path d="M9.9 4.2A10 10 0 0 1 12 4c6.5 0 10 8 10 8a17 17 0 0 1-2.2 3.2M6.6 6.6A17 17 0 0 0 2 12s3.5 8 10 8a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2M2 2l20 20"/>'
+      : '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'}</svg>`;
+  }));
+
+  // Thanh mockup: điền dữ liệu mẫu cho từng trạng thái
+  document.addEventListener('mock:state', ({ detail: s }) => {
+    clearInterval(timer); submit.textContent = 'Tạo tài khoản';
+    setBusy(false); setFieldErrors({}); showAlert(null); form.reset();
+    submit.blur();
+    if (s === 'loading') {
+      form.email.value = 'lan.anh@example.com'; form.displayName.value = 'Lan Anh';
+      form.password.value = form.confirm.value = 'hoc-tu-vung-moi-ngay'; form.terms.checked = true;
+      setBusy(true);
+    }
+    if (s === 'error') {
+      form.email.value = 'lan.anh@example'; form.displayName.value = LONG_NAME;
+      form.password.value = 'ngan'; form.confirm.value = 'ngan'; form.terms.checked = true;
+      setFieldErrors({ email: 'Email không đúng định dạng.', password: 'Mật khẩu phải từ 10 đến 128 ký tự.' });
+      showAlert('Chưa tạo được tài khoản. Kiểm tra kết nối rồi thử lại sau ít phút.', '9bb3b230684f4e67');
+    }
+  });
+})();
+</script>
+</body>
+</html>

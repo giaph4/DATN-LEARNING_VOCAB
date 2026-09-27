@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mockup giao diện — VocabLearning</title>
+  <link rel="icon" href="shared/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared/tokens.css">
+  <link rel="stylesheet" href="shared/base.css">
+  <link rel="stylesheet" href="shared/components.css">
+  <style>
+    .wrap { max-width: 880px; margin: 0 auto; padding: var(--sp-7) var(--sp-4); }
+    .phase { margin-top: var(--sp-7); }
+    .phase-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-3); }
+    .screens { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--divider); border-radius: var(--r-panel); }
+    .screens li + li { border-top: 1px solid var(--divider); }
+    .screens a, .screens .todo { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-1) var(--sp-4); padding: var(--sp-3) var(--sp-4); text-decoration: none; color: var(--text); }
+    .screens a:hover { background: var(--bg); }
+    .screens .todo { color: var(--text-muted); }
+    .screens small { grid-column: 1; color: var(--text-muted); font-size: var(--fs-caption); }
+    .screens .badge { grid-row: 1 / span 2; grid-column: 2; align-self: center; }
+    .demo .muted { margin-top: var(--sp-2); }
+    .demo-steps { margin: var(--sp-3) 0 0; padding-left: 1.25em; }
+    .demo-steps li + li { margin-top: var(--sp-1); }
+    .demo-actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-4); }
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <a class="brand" href="index.html"><img class="brand-mark" src="shared/assets/logo-mark.svg" alt="" width="28" height="28"><span>Vocab<span class="brand-accent">Learning</span></span></a>
+  <h1 style="margin-top:var(--sp-6)">Mockup giao diện</h1>
+  <p class="muted" style="margin-top:var(--sp-2)">HTML/CSS/JS thuần, làm theo <code>frontend/design/YEU_CAU_GIAO_DIEN.md</code>. FE dựng Next.js giống hệt các trang này. Trang Đợt 1–2 chạy như website demo (không cần backend); trang GĐ0 có thanh “Mockup” ở góc dưới để xem trạng thái tải, rỗng, lỗi, thành công.</p>
+
+  <section class="phase demo" aria-labelledby="demo-title">
+    <div class="phase-head"><h2 id="demo-title">Website demo</h2><span class="badge badge-success">Không cần backend</span></div>
+    <p class="muted">Mọi trang nối với nhau như một website thật, dữ liệu mẫu lưu trong trình duyệt. Email hệ thống (xác thực, đặt lại mật khẩu) nằm trong nút “Hộp thư” ở góc dưới.</p>
+    <p style="margin-top:var(--sp-3)">Tài khoản demo: <code>huynhgiapho@gmail.com</code> · mật khẩu <code>huynhgiapho1234</code></p>
+    <ol class="demo-steps">
+      <li>Trang chủ → Đăng nhập (hoặc Đăng ký rồi xác thực qua Hộp thư).</li>
+      <li>Lần đầu: thiết lập trình độ → mục tiêu và chủ đề → vào Học hôm nay.</li>
+      <li>Học: lật thẻ, chọn Quên/Khó/Nhớ/Dễ (phím 1–4) → tổng kết phiên.</li>
+      <li>Thư viện → chi tiết bộ thẻ; Luyện tập → kết quả; từ sai vào Sổ tay; xem Thống kê.</li>
+      <li>Hồ sơ (ảnh, tên), Cài đặt học, Bảo mật (liên kết Google, thiết bị), Quên mật khẩu.</li>
+    </ol>
+    <div class="demo-actions">
+      <a class="btn btn-primary" href="dot1/trang-chu.html">Mở website demo</a>
+      <a class="btn btn-secondary" href="dot1/dang-nhap.html">Đăng nhập ngay</a>
+      <button class="btn btn-ghost" type="button" id="demo-reset">Làm lại dữ liệu demo</button>
+    </div>
+  </section>
+
+  <section class="phase">
+    <div class="phase-head"><h2>GĐ0 — Nền tảng</h2><span class="badge badge-success">Có mockup</span></div>
+    <ul class="screens">
+      <li><a href="gd0/ui-kit.html">Bộ thành phần giao diện <span class="badge">F0.6</span><small>/_ui — màu, chữ, nút, biểu mẫu, bảng, trạng thái, thẻ học</small></a></li>
+      <li><a href="gd0/bo-cuc.html">Bố cục người học <span class="badge">F0.7</span><small>Máy tính: header + menu trái, 2 cột. Điện thoại: thanh điều hướng dưới 5 mục, kiểm tra phiên → /dang-nhap?quay-lai=</small></a></li>
+      <li><a href="gd0/chu-de.html">Chọn chủ đề quan tâm<small>GET /api/v1/topics — dùng lại ở UI06 bước 2 (F1.6)</small></a></li>
+    </ul>
+  </section>
+
+  <section class="phase">
+    <div class="phase-head"><h2>Đợt 1 — Tài khoản và nội dung</h2><span class="badge badge-warning">Đang làm</span></div>
+    <ul class="screens">
+      <li><a href="dot1/dang-ky.html">UI01 Đăng ký <span class="badge">F1.1</span><small>/dang-ky — POST /api/v1/auth/register, lỗi theo trường, 429 đếm ngược, màn kiểm tra hộp thư</small></a></li>
+      <li><a href="dot1/xac-thuc-email.html">UI02 Xác thực email <span class="badge">F1.2</span><small>/xac-thuc-email?token= — tự xác thực từ liên kết, hết hạn/không hợp lệ, gửi lại có đếm ngược</small></a></li>
+      <li><a href="dot1/dang-nhap.html">UI03 Đăng nhập <span class="badge">F1.3</span><small>/dang-nhap — email/mật khẩu, Google, lỗi chưa xác thực/khóa/email Google trùng, 429 đếm ngược</small></a></li>
+      <li><a href="dot1/quen-mat-khau.html">UI04 Quên mật khẩu <span class="badge">F1.4</span><small>/quen-mat-khau — thông báo chung, gửi lại có đếm ngược, 429</small></a></li>
+      <li><a href="dot1/dat-lai-mat-khau.html">UI04 Đặt lại mật khẩu <span class="badge">F1.4</span><small>/dat-lai-mat-khau?token= — mật khẩu mới + nhập lại, mã hết hạn/đã dùng, đổi xong về đăng nhập</small></a></li>
+      <li><a href="dot1/ho-so.html">Hồ sơ <span class="badge">F1.5</span><small>/ho-so — tên, giới thiệu, ảnh đại diện (upload-intent → PUT → complete), đăng xuất</small></a></li>
+      <li><a href="dot1/cai-dat.html">Thiết lập học <span class="badge">F1.6</span><small>/cai-dat — lần đầu theo bước: trình độ A1–C2 → mục tiêu + chủ đề quan tâm; đã xong thì là trang sửa</small></a></li>
+      <li><a href="dot1/bao-mat.html">Bảo mật tài khoản <span class="badge">F1.6</span><small>/cai-dat/bao-mat — phương thức đăng nhập (liên kết/gỡ Google), thiết bị đang đăng nhập, xác thực lại 5 phút</small></a></li>
+      <li><a href="dot1/trang-chu.html">Trang chủ <span class="badge">F1.15</span><small>/ — giới thiệu, thẻ mẫu, bộ thẻ nổi bật, đăng ký/đăng nhập</small></a></li>
+      <li><a href="dot1/thu-vien.html">UI08 Thư viện <span class="badge">F1.8</span><small>/thu-vien — tab Đang học/Yêu thích/Của tôi, tìm, lọc chủ đề/trình độ/nguồn, bỏ từng bộ lọc</small></a></li>
+      <li><a href="dot1/bo-the.html?id=d1">UI09 + UI11 Chi tiết bộ thẻ <span class="badge">F1.9</span><small>/bo-the/[id] — thông tin bộ, tiến độ, học/luyện/sao chép/yêu thích, danh sách thẻ có tìm và nghe</small></a></li>
+      <li><span class="todo">UI07 Xóa tài khoản, UI10 soạn bộ, UI12 soạn thẻ, UI13 CSV<span class="badge">F1.7, F1.10–F1.13</span><small>Tạo khi BE xong B1.10–B1.22</small></span></li>
+    </ul>
+  </section>
+
+  <section class="phase">
+    <div class="phase-head"><h2>Đợt 2 — Học và luyện tập</h2><span class="badge badge-warning">Có demo tĩnh</span></div>
+    <ul class="screens">
+      <li><a href="dot2/hoc.html">UI15 Học hôm nay <span class="badge">F2.1</span><small>/hoc — thẻ đến hạn + từ mới, nút Bắt đầu học, kế hoạch, bộ đang học</small></a></li>
+      <li><a href="dot2/hoc-phien.html">UI16 + UI17 Phiên học và tổng kết <span class="badge">F2.2</span><small>/hoc/phien — lật thẻ (phím cách), Quên/Khó/Nhớ/Dễ (1–4), nghe phát âm, tổng kết phiên</small></a></li>
+      <li><a href="dot2/luyen-tap.html">UI19–UI22 Luyện tập <span class="badge">F2.5</span><small>/luyen-tap — chọn nghĩa hoặc gõ từ, giải thích đúng/sai, kết quả, lịch sử, luyện lại câu sai</small></a></li>
+      <li><a href="dot2/so-tay.html">UI27 Sổ tay từ khó <span class="badge">F2.9</span><small>/so-tay — lọc theo nhóm lỗi, nghe, đánh dấu đã thuộc, luyện các từ trong sổ tay</small></a></li>
+      <li><a href="dot2/thong-ke.html">UI30 Thống kê <span class="badge">F2.12</span><small>/thong-ke — 7/30 ngày, biểu đồ hoạt động (có dạng bảng), kỹ năng, từ hay quên</small></a></li>
+    </ul>
+  </section>
+
+  <section class="phase">
+    <div class="phase-head"><h2>Đợt 3 — AI, phát âm, động lực, quản trị</h2><span class="badge">Chờ API</span></div>
+    <ul class="screens"><li><span class="todo">Nháp AI, phát âm, thành tích, quản trị<span class="badge">F3.x</span><small>Tạo khi BE xong từng nhóm</small></span></li></ul>
+  </section>
+</main>
+<script src="shared/demo.js"></script>
+<script>
+  document.getElementById('demo-reset').addEventListener('click', () => {
+    if (confirm('Xóa toàn bộ dữ liệu demo (tài khoản mới, tiến độ học, email) và bắt đầu lại?')) VLDemo.reset();
+  });
+</script>
+</body>
+</html>

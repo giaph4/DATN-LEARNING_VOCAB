@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Thư viện — VocabLearning</title>
+  <link rel="icon" href="../shared/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    .toolbar { display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+    .filters { display: grid; grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)); gap: var(--sp-3); }
+    .filters label { font-size: var(--fs-caption); color: var(--text-muted); display: block; margin-bottom: 4px; }
+    .filter-toggle { display: none; }
+    .decks { list-style: none; margin: 0; padding: 0; }
+    .deck { display: flex; gap: var(--sp-4); align-items: flex-start; padding: var(--sp-4) var(--sp-5); }
+    .deck + .deck { border-top: 1px solid var(--divider); }
+    .deck-body { flex: 1; min-width: 0; }
+    .deck-title { font-weight: 600; font-size: 17px; color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
+    .deck-title:hover { color: var(--primary); text-decoration: underline; }
+    .deck-desc { color: var(--text-muted); margin-top: 2px; }
+    .deck-meta { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); align-items: center; }
+    .deck-actions { display: flex; gap: var(--sp-2); align-items: center; flex: none; }
+    .fav[aria-pressed="true"] { color: var(--accent-text); }
+    .fav[aria-pressed="true"] svg { fill: var(--accent); stroke: var(--accent-text); }
+    .result-count { font-size: var(--fs-caption); color: var(--text-muted); }
+    @media (max-width: 1023.98px) {
+      .filter-toggle { display: inline-flex; }
+      .filters { grid-template-columns: 1fr; }
+      .filters[data-open="false"] .f-extra { display: none; }
+      .deck { flex-direction: column; padding: var(--sp-4); }
+      .deck-actions { width: 100%; }
+      .deck-actions .btn-secondary { flex: 1; }
+    }
+  </style>
+</head>
+<!-- Thư viện — route /thu-vien — FE F1.8 (UI08). Demo tĩnh: lọc trên dữ liệu mẫu (bản thật: GET /library/decks, PUT/DELETE /decks/{id}/favorite). -->
+<body data-nav="thu-vien" data-auth="required">
+<a class="skip-link" href="#main">Bỏ qua điều hướng</a>
+<div class="app">
+  <header class="app-header"></header>
+  <nav class="sidebar" aria-label="Điều hướng chính"></nav>
+
+  <main class="main" id="main">
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <h1>Thư viện</h1>
+          <p class="muted">Bộ thẻ bạn đang học, đã lưu và nội dung mẫu theo chủ đề.</p>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="row" style="justify-content:space-between">
+          <div class="seg" role="group" aria-label="Nhóm bộ thẻ" id="tabs">
+            <button type="button" data-tab="all" aria-pressed="true">Tất cả</button>
+            <button type="button" data-tab="studying" aria-pressed="false">Đang học</button>
+            <button type="button" data-tab="fav" aria-pressed="false">Yêu thích</button>
+            <button type="button" data-tab="own" aria-pressed="false">Của tôi</button>
+          </div>
+          <button class="btn btn-secondary filter-toggle" type="button" id="filter-toggle" aria-expanded="false" aria-controls="filters"><i data-icon="filter"></i><span>Bộ lọc</span></button>
+        </div>
+        <div class="filters" id="filters" data-open="false">
+          <div><label for="q">Tìm bộ thẻ</label><input class="input" id="q" type="search" placeholder="Tên hoặc mô tả, ví dụ: sân bay" autocomplete="off"></div>
+          <div class="f-extra"><label for="topic">Chủ đề</label><select class="select" id="topic"><option value="">Tất cả chủ đề</option></select></div>
+          <div class="f-extra"><label for="level">Trình độ</label><select class="select" id="level"><option value="">Mọi trình độ</option></select></div>
+          <div class="f-extra"><label for="source">Nguồn</label><select class="select" id="source"><option value="">Mọi nguồn</option><option value="ADMIN">Nội dung mẫu</option><option value="USER">Tự soạn</option></select></div>
+        </div>
+        <div class="row" style="justify-content:space-between">
+          <div class="chips" id="chips" aria-label="Bộ lọc đang áp dụng"></div>
+          <span class="result-count" id="count" aria-live="polite"></span>
+        </div>
+      </div>
+
+      <div class="panel" style="padding:0" id="list-panel"><ul class="decks" id="decks"></ul></div>
+      <div class="state" id="empty" hidden>
+        <h3 id="empty-title">Không tìm thấy bộ thẻ phù hợp</h3>
+        <p class="muted" id="empty-text">Thử bỏ bớt bộ lọc hoặc tìm bằng từ khác.</p>
+        <button class="btn btn-secondary" type="button" id="clear">Xóa bộ lọc</button>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Điều hướng chính"></nav>
+</div>
+
+<script src="../shared/demo.js"></script>
+<script src="../shared/app.js"></script>
+<script>
+(() => {
+  const D = VLDemo;
+  if (!D.account()) return;
+  const l = D.learning();
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const topicName = (id) => D.ALL_TOPICS.find((t) => t.id === id)?.name || '';
+  const state = { tab: 'all', q: '', topic: '', level: '', source: '' };
+
+  D.TOPICS.forEach((t) => {
+    $('topic').insertAdjacentHTML('beforeend', `<option value="${t.id}">${esc(t.name)}</option>`
+      + t.children.map((ch) => `<option value="${ch.id}">— ${esc(ch.name)}</option>`).join(''));
+  });
+  ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].forEach((lv) => $('level').insertAdjacentHTML('beforeend', `<option>${lv}</option>`));
+
+  const inTopic = (d) => !state.topic || d.topic === state.topic || D.ALL_TOPICS.find((t) => t.id === d.topic && D.TOPICS.some((r) => r.id === state.topic && r.children.includes(t)));
+  const matches = (d) => {
+    if (state.tab === 'studying' && !l.studying.includes(d.id)) return false;
+    if (state.tab === 'fav' && !l.favorites.includes(d.id)) return false;
+    if (state.tab === 'own' && !l.ownDecks.includes(d.id)) return false;
+    const text = `${d.title} ${d.description}`.toLocaleLowerCase('vi');
+    return (!state.q || text.includes(state.q.toLocaleLowerCase('vi'))) && inTopic(d)
+      && (!state.level || d.level === state.level) && (!state.source || d.source === state.source);
+  };
+
+  const render = () => {
+    const list = D.DECKS.filter(matches);
+    $('count').textContent = `${list.length} bộ thẻ`;
+    $('list-panel').hidden = !list.length;
+    $('empty').hidden = !!list.length;
+    const filtered = state.q || state.topic || state.level || state.source;
+    $('empty-title').textContent = filtered ? 'Không tìm thấy bộ thẻ phù hợp' : 'Chưa có bộ thẻ nào ở mục này';
+    $('empty-text').textContent = filtered ? 'Thử bỏ bớt bộ lọc hoặc tìm bằng từ khác.'
+      : state.tab === 'fav' ? 'Bấm biểu tượng ngôi sao ở một bộ thẻ để lưu vào Yêu thích.' : 'Mở tab Tất cả để chọn bộ thẻ bắt đầu học.';
+    $('clear').hidden = !filtered;
+    $('decks').innerHTML = list.map((d) => {
+      const studying = l.studying.includes(d.id);
+      const p = D.deckProgress(d.id);
+      const fav = l.favorites.includes(d.id);
+      return `<li class="deck">
+        <div class="deck-body">
+          <a class="deck-title" href="bo-the?id=${d.id}">${esc(d.title)}</a>
+          <p class="deck-desc">${esc(d.description)}</p>
+          <div class="deck-meta">
+            <span class="badge badge-info">${d.level}</span><span class="badge">${d.cards.length} thẻ</span><span class="badge">${esc(topicName(d.topic))}</span>
+            <span class="badge">${d.source === 'ADMIN' ? 'Nội dung mẫu' : 'Tự soạn'}</span>
+            ${studying ? `<span class="badge badge-success">Đang học · ${p.seen}/${p.total}</span>` : ''}
+          </div>
+        </div>
+        <div class="deck-actions">
+          <a class="btn btn-secondary" href="${studying ? `../dot2/hoc-phien?bo=${d.id}` : `bo-the?id=${d.id}`}">${studying ? 'Học' : 'Xem bộ thẻ'}</a>
+          <button class="btn btn-ghost btn-icon fav" type="button" data-fav="${d.id}" aria-pressed="${fav}" aria-label="${fav ? 'Bỏ khỏi Yêu thích' : 'Thêm vào Yêu thích'}: ${esc(d.title)}"><i data-icon="star"></i></button>
+        </div></li>`;
+    }).join('');
+    const labels = [
+      state.q && ['q', `“${state.q}”`], state.topic && ['topic', topicName(state.topic)], state.level && ['level', state.level],
+      state.source && ['source', state.source === 'ADMIN' ? 'Nội dung mẫu' : 'Tự soạn'],
+    ].filter(Boolean);
+    $('chips').innerHTML = labels.map(([k, v]) => `<button class="chip" type="button" data-unset="${k}" aria-label="Bỏ lọc ${esc(v)}">${esc(v)}<i data-icon="x"></i></button>`).join('');
+    $('filter-toggle').querySelector('span').textContent = labels.length ? `Bộ lọc (${labels.length})` : 'Bộ lọc';
+    VL.renderIcons();
+  };
+
+  $('tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tab]'); if (!b) return;
+    state.tab = b.dataset.tab;
+    $('tabs').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  });
+  $('q').addEventListener('input', (e) => { state.q = e.target.value.trim(); render(); });
+  ['topic', 'level', 'source'].forEach((k) => $(k).addEventListener('change', (e) => { state[k] = e.target.value; render(); }));
+  $('chips').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-unset]'); if (!b) return;
+    state[b.dataset.unset] = ''; $(b.dataset.unset).value = ''; render();
+  });
+  $('clear').addEventListener('click', () => { Object.assign(state, { q: '', topic: '', level: '', source: '' }); ['q', 'topic', 'level', 'source'].forEach((k) => { $(k).value = ''; }); render(); });
+  $('filter-toggle').addEventListener('click', (e) => {
+    const open = $('filters').dataset.open !== 'true';
+    $('filters').dataset.open = String(open); e.currentTarget.setAttribute('aria-expanded', String(open));
+  });
+  $('decks').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-fav]'); if (!b) return;
+    const id = b.dataset.fav; const on = !l.favorites.includes(id);
+    l.favorites = on ? [...l.favorites, id] : l.favorites.filter((x) => x !== id);
+    D.save(); render(); VL.toast(on ? 'Đã thêm vào Yêu thích' : 'Đã bỏ khỏi Yêu thích');
+  });
+  render();
+})();
+</script>
+</body>
+</html>

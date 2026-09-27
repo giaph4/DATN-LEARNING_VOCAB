@@ -1,0 +1,4 @@
+# Background worker: polls tac_vu_nen (jobs) and su_kien_cho_gui (outbox).
+app:
+  worker:
+    enabled: true

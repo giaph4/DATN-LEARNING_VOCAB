@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="VocabLearning">
+  <!-- Biểu tượng: 2 thẻ từ xếp chồng + chữ V + chấm cam "nhớ ra rồi" -->
+  <rect width="32" height="32" rx="8" fill="#1D5FD1"/>
+  <rect x="8.5" y="7.5" width="15" height="18.5" rx="3" fill="#FFFFFF" fill-opacity="0.35" transform="rotate(-9 16 16.75)"/>
+  <rect x="9.5" y="8" width="15" height="18.5" rx="3" fill="#FFFFFF"/>
+  <path d="M13 12.8 17 21.2 21 12.8" fill="none" stroke="#1D5FD1" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="24.5" cy="8" r="3.4" fill="#F59E0B" stroke="#1D5FD1" stroke-width="1.6"/>
+</svg>

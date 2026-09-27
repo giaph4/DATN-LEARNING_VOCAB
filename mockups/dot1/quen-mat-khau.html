@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Quên mật khẩu — VocabLearning</title>
+  <link rel="icon" href="../shared/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    body[data-state="live"] [data-show-when~="live"] { display: block; }
+    /* Không đặt display cho .auth-card: sẽ đè quy tắc ẩn/hiện theo trạng thái */
+    .auth-card > * + * { margin-top: var(--sp-5); }
+    .auth-card h1 { font-size: var(--fs-page); line-height: var(--lh-tight); }
+    .auth-card .lead { color: var(--text-muted); margin-top: var(--sp-2); }
+    .form { display: flex; flex-direction: column; gap: var(--sp-4); }
+    .input { width: 100%; min-width: 0; }
+    .form .btn { width: 100%; }
+    .auth-foot { text-align: center; color: var(--text-muted); }
+    .state-icon { width: 48px; height: 48px; border-radius: var(--r-panel); display: grid; place-items: center;
+      background: var(--selected-bg); color: var(--primary); }
+    .email { font-weight: 600; overflow-wrap: anywhere; }
+    .sent ol { margin: 0; padding-left: var(--sp-5); color: var(--text-muted); }
+    .sent ol li + li { margin-top: var(--sp-1); }
+    .sent .actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+    .auth-aside .auth-hero { max-width: 360px; width: 100%; margin-bottom: auto; background: transparent;
+      border-color: var(--on-primary-divider); color: var(--on-primary); }
+    .auth-aside .auth-hero figcaption b { color: var(--on-primary); }
+  </style>
+</head>
+<!--
+  UI04 Quên mật khẩu — route /quen-mat-khau — FE F1.4 — BE B1.4 (TK-05)
+  API: POST /api/v1/auth/forgot-password {email} → 202 {message} (luôn như nhau); 400 VALIDATION_FAILED; 429 RATE_LIMITED
+  Email đặt lại (Mailpit) chứa liên kết /dat-lai-mat-khau?token=… hiệu lực 15 phút
+-->
+<body data-states="loading error success live" data-state="live">
+<main class="auth" id="main">
+  <aside class="auth-aside" aria-label="Giới thiệu VocabLearning">
+    <a class="brand" href="trang-chu"><img class="brand-mark" src="../shared/assets/logo-mark-inverse.svg" alt="" width="28" height="28"><span>Vocab<span class="brand-accent">Learning</span></span></a>
+    <h2>Lấy lại quyền truy cập trong vài phút.</h2>
+    <ul>
+      <li><i data-icon="check"></i><span>Liên kết đặt lại chỉ dùng được một lần, trong 15 phút.</span></li>
+      <li><i data-icon="check"></i><span>Đổi mật khẩu xong, mọi thiết bị đang đăng nhập sẽ được đăng xuất.</span></li>
+    </ul>
+    <figure class="img-slot auth-hero" data-src="../shared/assets/images/auth-hero.png" data-alt="" style="aspect-ratio:4/3">
+      <i data-icon="image"></i>
+      <figcaption><b>Minh họa trang tài khoản</b><span>auth-hero · 960×720 (dùng chung các trang tài khoản)</span></figcaption>
+    </figure>
+  </aside>
+
+  <div class="auth-main">
+  <div class="auth-form">
+  <a class="brand" href="trang-chu"><img class="brand-mark" src="../shared/assets/logo-mark.svg" alt="" width="28" height="28"><span>Vocab<span class="brand-accent">Learning</span></span></a>
+
+  <section class="auth-card" data-show-when="loading error live" aria-labelledby="title">
+    <div>
+      <h1 id="title">Quên mật khẩu</h1>
+      <p class="lead">Nhập email của tài khoản, chúng tôi sẽ gửi liên kết để đặt mật khẩu mới.</p>
+    </div>
+
+    <div class="alert alert-danger" id="form-alert" role="alert" hidden>
+      <i data-icon="circle-alert"></i>
+      <div><p id="form-alert-text"></p><p class="trace" id="form-alert-trace" hidden>Mã lỗi: <code></code></p></div>
+    </div>
+
+    <form class="form" id="forgot" novalidate>
+      <div class="field" data-field="email">
+        <label for="email">Email</label>
+        <input class="input" id="email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required aria-describedby="email-error">
+        <span class="field-error" id="email-error" hidden><i data-icon="circle-alert"></i><span></span></span>
+      </div>
+      <button class="btn btn-primary btn-lg" type="submit" id="submit">Gửi liên kết đặt lại</button>
+    </form>
+
+    <p class="auth-foot">Nhớ ra mật khẩu? <a href="dang-nhap">Đăng nhập</a></p>
+  </section>
+
+  <section class="auth-card sent" data-show-when="success" aria-labelledby="sent-title" tabindex="-1" id="sent">
+    <span class="state-icon"><i data-icon="mail"></i></span>
+    <div>
+      <h1 id="sent-title">Kiểm tra hộp thư của bạn</h1>
+      <p class="lead" id="sent-message">Nếu email thuộc một tài khoản đang hoạt động, liên kết đặt lại mật khẩu sẽ đến trong vài phút.</p>
+    </div>
+    <p>Email đã nhập: <span class="email" id="sent-email">nguyen.thi.thanh.huong.hoc.tieng.anh.moi.ngay@truong-dai-hoc-ngoai-ngu.edu.vn</span></p>
+    <ol>
+      <li>Mở email "Đặt lại mật khẩu VocabLearning" và nhấn liên kết.</li>
+      <li>Liên kết có hiệu lực 15 phút và chỉ dùng được một lần.</li>
+      <li>Không thấy email? Xem thư mục Spam, hoặc gửi lại sau ít phút.</li>
+    </ol>
+    <div class="actions">
+      <button class="btn btn-secondary" type="button" id="again">Gửi lại</button>
+      <a class="btn btn-ghost" href="dang-nhap">Về trang đăng nhập</a>
+    </div>
+  </section>
+  </div>
+  </div>
+</main>
+
+<script src="../shared/demo.js"></script>
+<script src="../shared/app.js"></script>
+<script>
+(() => {
+  const form = document.getElementById('forgot');
+  const submit = document.getElementById('submit');
+  const again = document.getElementById('again');
+  let lastEmail = '';
+
+  const setFieldError = (msg) => {
+    const f = form.querySelector('[data-field="email"]');
+    f.toggleAttribute('data-invalid', !!msg);
+    form.email.setAttribute('aria-invalid', msg ? 'true' : 'false');
+    const err = f.querySelector('.field-error');
+    err.hidden = !msg; err.querySelector('span').textContent = msg || '';
+    if (msg) form.email.focus();
+  };
+
+  const showAlert = (text, traceId) => {
+    document.getElementById('form-alert').hidden = !text;
+    document.getElementById('form-alert-text').textContent = text || '';
+    const t = document.getElementById('form-alert-trace');
+    t.hidden = !traceId; t.querySelector('code').textContent = traceId || '';
+  };
+
+  // Nút "Gửi lại" khóa 60 giây; 429 dùng số giây trong detail của BE
+  let timer;
+  const cooldown = (btn, label, seconds) => {
+    let s = seconds;
+    clearInterval(timer); btn.disabled = true;
+    const tick = () => {
+      if (s <= 0) { clearInterval(timer); btn.disabled = false; btn.textContent = label; return; }
+      btn.textContent = `${label} sau ${s} giây`; s -= 1;
+    };
+    tick(); timer = setInterval(tick, 1000);
+  };
+
+  const showSent = (email, message) => {
+    document.getElementById('sent-email').textContent = email;
+    if (message) document.getElementById('sent-message').textContent = message;
+    document.body.dataset.state = 'success';
+    document.getElementById('sent').focus();
+    cooldown(again, 'Gửi lại', 60);
+  };
+
+  const onError = (e) => {
+    if (e.code === 'VALIDATION_FAILED') { document.body.dataset.state = 'live'; setFieldError(e.fieldErrors?.[0]?.message); }
+    else if (e.code === 'RATE_LIMITED') {
+      document.body.dataset.state = 'live';
+      showAlert('Bạn đã yêu cầu quá nhiều lần. Vui lòng đợi rồi thử lại.');
+      cooldown(submit, 'Gửi liên kết đặt lại', +(e.detail?.match(/(\d+)\s*giây/)?.[1] || 60));
+    } else { document.body.dataset.state = 'live'; showAlert('Chưa gửi được yêu cầu. Kiểm tra kết nối rồi thử lại sau ít phút.', e.traceId); }
+  };
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const email = form.email.value.trim();
+    if (!email) return setFieldError('Vui lòng nhập email.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setFieldError('Email không đúng định dạng.');
+    setFieldError(null); showAlert(null);
+    const live = document.body.dataset.state === 'live';
+    submit.disabled = true; submit.setAttribute('aria-busy', 'true');
+    try {
+      const body = live ? (await VL.send('POST', '/auth/forgot-password', { email })).body : null;
+      lastEmail = email; showSent(email, body?.message);
+    } catch (e) { onError(e); }
+    finally { submit.removeAttribute('aria-busy'); if (!submit.textContent.includes('giây')) submit.disabled = false; }
+  });
+
+  again.addEventListener('click', async () => {
+    again.disabled = true;
+    try { if (lastEmail) await VL.send('POST', '/auth/forgot-password', { email: lastEmail }); VL.toast('Đã gửi lại liên kết'); cooldown(again, 'Gửi lại', 60); }
+    catch (e) { again.disabled = false; onError(e); }
+  });
+
+  document.addEventListener('mock:state', ({ detail: s }) => {
+    clearInterval(timer); submit.disabled = false; submit.textContent = 'Gửi liên kết đặt lại'; again.textContent = 'Gửi lại'; again.disabled = false;
+    form.reset(); setFieldError(null); showAlert(null); lastEmail = '';
+    if (s === 'loading') { form.email.value = 'lan.anh@example.com'; submit.disabled = true; submit.setAttribute('aria-busy', 'true'); }
+    if (s === 'error') { form.email.value = 'lan.anh@example.com'; showAlert('Chưa gửi được yêu cầu. Kiểm tra kết nối rồi thử lại sau ít phút.', '9bb3b230684f4e67'); }
+    if (s === 'success') cooldown(again, 'Gửi lại', 60);
+  });
+})();
+</script>
+</body>
+</html>
